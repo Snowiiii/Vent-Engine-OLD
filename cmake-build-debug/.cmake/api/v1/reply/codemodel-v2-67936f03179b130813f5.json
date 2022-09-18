@@ -1,0 +1,300 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						3,
+						5,
+						6,
+						7
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.15"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						2,
+						5
+					]
+				},
+				{
+					"build" : "deps/glm",
+					"childIndexes" : 
+					[
+						2
+					],
+					"jsonFile" : "directory-deps.glm-Debug-f7e931a077cfdee331ce.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.2"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "deps/glm"
+				},
+				{
+					"build" : "deps/glm/glm",
+					"jsonFile" : "directory-deps.glm.glm-Debug-c8ba94b5689124e3ba83.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.2"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 1,
+					"source" : "deps/glm/glm"
+				},
+				{
+					"build" : "deps/glfw",
+					"childIndexes" : 
+					[
+						4
+					],
+					"jsonFile" : "directory-deps.glfw-Debug-432c2349cf968c197e5b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "deps/glfw"
+				},
+				{
+					"build" : "deps/glfw/src",
+					"jsonFile" : "directory-deps.glfw.src-Debug-3005960bb60656163cc8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 2,
+					"source" : "deps/glfw/src",
+					"targetIndexes" : 
+					[
+						1,
+						4
+					]
+				},
+				{
+					"build" : "deps/spdlog",
+					"jsonFile" : "directory-deps.spdlog-Debug-1f2903c80ed5892e77d2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "deps/spdlog",
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"build" : "deps/volk",
+					"jsonFile" : "directory-deps.volk-Debug-7556c7b14eaac9caad5a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 4,
+					"source" : "deps/volk",
+					"targetIndexes" : 
+					[
+						6
+					]
+				},
+				{
+					"build" : "deps/vma",
+					"childIndexes" : 
+					[
+						8
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-deps.vma-Debug-ad43e3efacbf802edefa.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 5,
+					"source" : "deps/vma"
+				},
+				{
+					"build" : "deps/vma/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-deps.vma.src-Debug-b679fc82d959e013d474.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.9"
+					},
+					"parentIndex" : 7,
+					"projectIndex" : 5,
+					"source" : "deps/vma/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "vent",
+					"targetIndexes" : 
+					[
+						2,
+						5
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1,
+						2
+					],
+					"name" : "glm",
+					"parentIndex" : 0
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3,
+						4
+					],
+					"name" : "GLFW",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1,
+						4
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						5
+					],
+					"name" : "spdlog",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						3
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6
+					],
+					"name" : "volk",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						6
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						7,
+						8
+					],
+					"name" : "VulkanMemoryAllocator",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 8,
+					"id" : "VulkanMemoryAllocator::@0ab26f2f0e1a5529746f",
+					"jsonFile" : "target-VulkanMemoryAllocator-Debug-49bab946bd17b1c442fc.json",
+					"name" : "VulkanMemoryAllocator",
+					"projectIndex" : 5
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "glfw::@c7b1059c348ca70b25fe",
+					"jsonFile" : "target-glfw-Debug-090f76e770ef621eb4ee.json",
+					"name" : "glfw",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "shaders::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-shaders-Debug-8fcb86bfe9c908953691.json",
+					"name" : "shaders",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "spdlog::@e31d82229abdd60a3d06",
+					"jsonFile" : "target-spdlog-Debug-22095c0a7bab5e432a4b.json",
+					"name" : "spdlog",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "update_mappings::@c7b1059c348ca70b25fe",
+					"jsonFile" : "target-update_mappings-Debug-3a0a0ecd8ad7d506b5d5.json",
+					"name" : "update_mappings",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "vent::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-vent-Debug-aec9630a49dc8ee71722.json",
+					"name" : "vent",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "volk::@4436481cdd1e5c4b7e6a",
+					"jsonFile" : "target-volk-Debug-3a206b00715df250c52f.json",
+					"name" : "volk",
+					"projectIndex" : 4
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/snowii/Dokumente/Development/C++/Vent-Engine/cmake-build-debug",
+		"source" : "/home/snowii/Dokumente/Development/C++/Vent-Engine"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 4
+	}
+}

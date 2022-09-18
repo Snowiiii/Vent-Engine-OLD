@@ -1,0 +1,12 @@
+[submodule "deps/vma"]
+	path = deps/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "deps/volk"]
+	path = deps/volk
+	url = https://github.com/zeux/volk
+[submodule "deps/glfw"]
+    	path = deps/glfw
+    	url = https://github.com/glfw/glfw
+[submodule "deps/spdlog"]
+	path = deps/spdlog
+	url = https://github.com/gabime/spdlog
