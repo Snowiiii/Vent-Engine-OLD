@@ -4,9 +4,15 @@
 [submodule "deps/volk"]
 	path = deps/volk
 	url = https://github.com/zeux/volk
-[submodule "deps/glfw"]
-    	path = deps/glfw
-    	url = https://github.com/glfw/glfw
+[submodule "deps/SDL2"]
+    path = deps/SDL2
+    url = https://github.com/libsdl-org/SDL
 [submodule "deps/spdlog"]
 	path = deps/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "deps/glm"]
+	path = deps/glm
+	url = https://github.com/g-truc/glm
+[submodule "deps/stb"]
+	path = deps/stb
+	url = https://github.com/nothings/stb

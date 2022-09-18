@@ -126,11 +126,12 @@ void VKBase::createInstance()
 
 	std::vector<vk::ExtensionProperties> instance_extensions = vk::enumerateInstanceExtensionProperties();
 
-	uint32_t glfwExtensionCount = 0;
-	const char **glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	uint32_t instanceExtensionCount;
+	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, 0);
+	const char** enabledInstanceExtensions = new const char* [instanceExtensionCount];
+	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, enabledInstanceExtensions);
 
-	std::vector<const char *> active_instance_extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+	std::vector<const char *> active_instance_extensions(enabledInstanceExtensions, enabledInstanceExtensions + instanceExtensionCount);
 
 #ifdef VALIDATION_LAYERS
 	active_instance_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -320,9 +321,9 @@ void VKBase::initVulkan()
 	createInstance();
 	selectPhysicalDevice();
 
-	const auto &extent = window.getExtent();
-	context->swapchain_dimensions.width = extent.width;
-	context->swapchain_dimensions.height = extent.height;
+	// const auto &extent = window.getExtent();
+	// context->swapchain_dimensions.width = extent.width;
+	// context->swapchain_dimensions.height = extent.height;
 
 	createDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 	createAllocator();

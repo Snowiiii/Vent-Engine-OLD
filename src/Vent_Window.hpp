@@ -12,13 +12,16 @@
 
 #include <spdlog/spdlog.h>
 
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
+#include <SDL_vulkan.h>
 
 class Vent_Window
 {
 
 public:
+    SDL_Window *handle;
+
     uint32_t width, height;
 
     Vent_Window(uint32_t width, uint32_t height, const char *title);
@@ -31,16 +34,7 @@ public:
 
     vk::SurfaceKHR createSurface(vk::Instance instance);
 
-    vk::Extent2D getExtent() const { return {width, height}; }
-
-    void update() const noexcept;
-
-    bool shouldClose() const noexcept { return glfwWindowShouldClose(handle); }
+    bool handleEvents();  
 
 private:
-    GLFWwindow *handle{};
-
-    void createWindow(const char* title);
-
-    static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 };

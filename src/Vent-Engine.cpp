@@ -10,17 +10,20 @@ int main(int argc, char *argv[])
 	try
 	{
 		Renderer renderer{};
-		
-		while (!renderer.window.shouldClose())
+
+		float delta = 0.0f;
+		uint64_t perfCounterFrequency = SDL_GetPerformanceFrequency();
+		uint64_t lastCounter = SDL_GetPerformanceCounter();
+
+		while (renderer.window.handleEvents())
 		{
-			float currentTime = glfwGetTime();
-			float delta = currentTime - previousTime;
-			previousTime = currentTime;
-
-			renderer.window.update();
 			renderer.update(delta);
+			uint64_t endCounter = SDL_GetPerformanceCounter();
+			uint64_t counterElapsed = endCounter - lastCounter;
+			delta = ((float)counterElapsed) / (float)perfCounterFrequency;
+			lastCounter = endCounter;
 
-		//	spdlog::debug("FPS {}, {} ms", 1000 / delta, delta);
+			spdlog::debug("FPS {}, {} ms", 1000 / delta, delta);
 		}
 	}
 	catch (const std::exception &e)

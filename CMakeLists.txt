@@ -15,7 +15,7 @@ set(SHADER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/shaders)
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(deps/glm)
-add_subdirectory(deps/glfw)
+add_subdirectory(deps/SDL2)
 add_subdirectory(deps/spdlog)
 add_subdirectory(deps/stb)
 
@@ -100,7 +100,7 @@ if (Vulkan_FOUND)
 
     # We use Volk
    # target_compile_definitions(vma INTERFACE VMA_STATIC_VULKAN_FUNCTIONS=0)
-   # target_compile_definitions(vma INTERFACE VMA_DYNAMIC_VULKAN_FUNCTIONS=0)
+   # target_compile_definitions(vma INTERFACE VMA_DYNAMIC_VULKAN_FUNCTIONS=1)
 
     # volk - 1.3.215
     target_link_libraries(volk INTERFACE vulkan)
@@ -118,20 +118,8 @@ if (Vulkan_FOUND)
 endif (Vulkan_FOUND)
 
 
-# GLFW - 3.3.8
-if (NOT DIRECT_TO_DISPLAY)
-    option(GLFW_BUILD_DOCS OFF)
-    option(GLFW_BUILD_TESTS OFF)
-    option(GLFW_BUILD_EXAMPLES OFF)
-    option(GLFW_BUILD_TESTS OFF)
-    option(GLFW_INSTALL OFF)
-    if (VKB_WSI_SELECTION STREQUAL WAYLAND)
-        set(GLFW_USE_WAYLAND ON)
-    endif()
-
-endif()
-
-target_link_libraries(vent PUBLIC glfw)
+# SDL2 - 2.24.0
+target_link_libraries(vent PUBLIC SDL2-static)
 
 # target_precompile_headers(${PROJECT_NAME} PRIVATE <vulkan/vulkan.hpp>)
 
