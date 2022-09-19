@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.13)
 
 project(vent VERSION 1.0.0)
 
@@ -6,8 +6,6 @@ project(vent VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 20)
 # Sets C++ standard rquired to true
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin")
 
 set(SHADER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/shaders)
 
@@ -117,6 +115,8 @@ if (Vulkan_FOUND)
 
 endif (Vulkan_FOUND)
 
+option(SDL_TESTS OFF)
+option(SDL_INSTALL_TESTS OFF)
 
 # SDL2 - 2.24.0
 target_link_libraries(vent PUBLIC SDL2-static)
@@ -125,7 +125,7 @@ target_link_libraries(vent PUBLIC SDL2-static)
 
 # Vulkan
 if (Vulkan_FOUND)
-    set(SHADER_BINARY_DIR ${PROJECT_SOURCE_DIR}/shaders/spv)
+    set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders/spv)
 
     file(GLOB SHADERS
             ${SHADER_SOURCE_DIR}/*.vert
@@ -141,19 +141,27 @@ if (Vulkan_FOUND)
             ${SHADER_SOURCE_DIR}/*.rmiss)
 
     message(DEBUG "Compiling shaders...")
+
+    add_custom_command(
+    COMMAND
+      ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
+    OUTPUT ${SHADER_BINARY_DIR}
+    COMMENT "Creating ${SHADER_BINARY_DIR}"
+  )
+
+  
     foreach (source ${SHADERS})
         get_filename_component(FILENAME ${source} NAME)
         add_custom_command(
                 OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
-                COMMAND ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
                 COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${source} -o ${SHADER_BINARY_DIR}/${FILENAME}.spv
-                DEPENDS ${source}
-                COMMENT "Compiling ${FILENAME}"
+                DEPENDS ${source} ${SHADER_BINARY_DIR}
+                COMMENT "[SHADERS] Compiling ${FILENAME}"
         )
         list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
     endforeach ()
 
-    add_custom_target(shaders DEPENDS ${SPV_SHADERS})
+    add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
 endif (Vulkan_FOUND)
 
 
