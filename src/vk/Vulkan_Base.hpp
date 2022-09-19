@@ -108,10 +108,6 @@ struct VulkanContext
     /// The graphics pipeline.
     vk::Pipeline pipeline;
 
-    /**
-     * The pipeline layout for resources.
-     * Not used in this sample, but we still need to provide a dummy one.
-     */
     vk::PipelineLayout pipeline_layout;
 
     /// The debug report callback.
@@ -124,6 +120,11 @@ struct VulkanContext
     std::vector<PerFrame> per_frame;
 
     VmaAllocator memory_allocator{VK_NULL_HANDLE};
+
+    vk::DescriptorPool descriptor_pool;
+
+    vk::DescriptorSetLayout descriptor_set_layout;
+
 };
 
 extern VulkanContext *context;
@@ -141,6 +142,10 @@ private:
     void createDevice(const std::vector<const char *> &required_device_extensions);
 
     void createAllocator();
+
+    void createDescriptorPool();
+
+    void createDescriptorSetLayoutBinding();
 
     bool is_extension_supported(std::string const &requested_extension) const;
 

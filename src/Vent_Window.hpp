@@ -32,6 +32,8 @@ public:
 
     Vent_Window &operator=(const Vent_Window &) = delete;
 
+    vk::Extent2D getExtent() const { return {width, height}; }
+
     vk::SurfaceKHR createSurface(vk::Instance instance);
 
     bool handleEvents();  

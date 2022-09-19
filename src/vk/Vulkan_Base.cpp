@@ -2,7 +2,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-VulkanContext* context = new VulkanContext;
+VulkanContext *context = new VulkanContext;
 
 #ifdef VALIDATION_LAYERS
 /// @brief A debug callback called from Vulkan validation layers.
@@ -128,7 +128,7 @@ void VKBase::createInstance()
 
 	uint32_t instanceExtensionCount;
 	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, 0);
-	const char** enabledInstanceExtensions = new const char* [instanceExtensionCount];
+	const char **enabledInstanceExtensions = new const char *[instanceExtensionCount];
 	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, enabledInstanceExtensions);
 
 	std::vector<const char *> active_instance_extensions(enabledInstanceExtensions, enabledInstanceExtensions + instanceExtensionCount);
@@ -316,17 +316,47 @@ void VKBase::createAllocator()
 	auto result = vmaCreateAllocator(&allocator_info, &context->memory_allocator);
 }
 
+void VKBase::createDescriptorPool()
+{
+	std::array<vk::DescriptorPoolSize, 2> pool_sizes = {{{vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1}}};
+
+	vk::DescriptorPoolCreateInfo descriptor_pool_create_info({}, 2, pool_sizes);
+
+	context->descriptor_pool = context->device.createDescriptorPool(descriptor_pool_create_info);
+}
+
+void VKBase::createDescriptorSetLayoutBinding()
+{
+	std::array<vk::DescriptorSetLayoutBinding, 2> set_layout_bindings = {
+		{{0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex},
+		 {1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}}};
+
+	vk::DescriptorSetLayoutCreateInfo descriptor_layout({}, set_layout_bindings);
+
+	context->descriptor_set_layout = context->device.createDescriptorSetLayout(descriptor_layout);
+
+#if defined(ANDROID)
+	vk::PipelineLayoutCreateInfo pipeline_layout_create_info({}, 1, &context->descriptor_set_layout);
+#else
+	vk::PipelineLayoutCreateInfo pipeline_layout_create_info({}, context->descriptor_set_layout);
+#endif
+
+	context->pipeline_layout = context->device.createPipelineLayout(pipeline_layout_create_info);
+}
+
 void VKBase::initVulkan()
 {
-	createInstance();
-	selectPhysicalDevice();
+	this->createInstance();
+	this->selectPhysicalDevice();
 
-	// const auto &extent = window.getExtent();
-	// context->swapchain_dimensions.width = extent.width;
-	// context->swapchain_dimensions.height = extent.height;
+	const auto &extent = window.getExtent();
+	context->swapchain_dimensions.width = extent.width;
+	context->swapchain_dimensions.height = extent.height;
 
-	createDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
-	createAllocator();
+	this->createDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
+	this->createAllocator();
+	this->createDescriptorPool();
+	this->createDescriptorSetLayoutBinding();
 }
 
 void VKBase::shutdownVulkan()
@@ -335,10 +365,39 @@ void VKBase::shutdownVulkan()
 	{
 		VmaTotalStatistics stats;
 		vmaCalculateStatistics(context->memory_allocator, &stats);
+		VkDeviceSize bytes = stats.total.statistics.allocationBytes;
 
-		spdlog::warn("Total device memory leaked: {} bytes.", stats.total.statistics.allocationBytes);
+		if (bytes > 0)
+		{
+			spdlog::warn("Total device memory leaked: {} bytes.", bytes);
+		}
 
 		vmaDestroyAllocator(context->memory_allocator);
+		context->memory_allocator = nullptr;
+	}
+
+	if (context->descriptor_set_layout)
+	{
+		context->device.destroyDescriptorSetLayout(context->descriptor_set_layout);
+		context->descriptor_set_layout = nullptr;
+	}
+
+	if (context->pipeline_layout)
+	{
+		context->device.destroyPipelineLayout(context->pipeline_layout);
+		context->pipeline_layout = nullptr;
+	}
+
+	if (context->surface)
+	{
+		context->instance.destroySurfaceKHR(context->surface);
+		context->surface = nullptr;
+	}
+
+	if (context->debug_callback)
+	{
+		context->instance.destroyDebugReportCallbackEXT(context->debug_callback);
+		context->debug_callback = nullptr;
 	}
 
 	if (context->device)
@@ -347,7 +406,13 @@ void VKBase::shutdownVulkan()
 		context->device = nullptr;
 	}
 
-	context->instance.destroy();
+	if (context->instance)
+	{
+		context->instance.destroy();
+		context->instance = nullptr;
+	}
+
+	delete context;
 }
 
 VKBase::VKBase(const Vent_Window &window) : window(window) {}

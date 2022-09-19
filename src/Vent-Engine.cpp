@@ -17,13 +17,14 @@ int main(int argc, char *argv[])
 
 		while (renderer.window.handleEvents())
 		{
+
 			renderer.update(delta);
 			uint64_t endCounter = SDL_GetPerformanceCounter();
 			uint64_t counterElapsed = endCounter - lastCounter;
 			delta = ((float)counterElapsed) / (float)perfCounterFrequency;
 			lastCounter = endCounter;
 
-			spdlog::debug("FPS {}, {} ms", 1000 / delta, delta);
+			//	spdlog::debug("FPS {}, {} ms", 1000 / delta, delta);
 		}
 	}
 	catch (const std::exception &e)

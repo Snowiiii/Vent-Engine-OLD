@@ -11,7 +11,7 @@ Renderer::Renderer()
 	spdlog::debug("Loading Models");
 	this->loadModels();
 	spdlog::debug("Creating VK Pipeline");
-	vkbase.createPipeline("../shaders/spv/default_vertex.vert.spv", "../shaders/spv/default_fragment.frag.spv");
+	vkbase.createPipeline("shaders/spv/color.vert.spv", "shaders/spv/color.frag.spv");
 
 	spdlog::debug("Init FrameBuffers");
 	this->init_framebuffers();
@@ -86,6 +86,12 @@ Renderer::~Renderer()
 
 	teardown_framebuffers();
 
+	if (model)
+	{
+		model.reset();
+	}
+	
+
 	for (auto &per_frame : context->per_frame)
 	{
 		vkbase.teardown_per_frame(per_frame);
@@ -103,18 +109,6 @@ Renderer::~Renderer()
 	vkbase.destroyRenderpass();
 
 	vkbase.destroySwapchain();
-
-	if (context->surface)
-	{
-		context->instance.destroySurfaceKHR(context->surface);
-		context->surface = nullptr;
-	}
-
-	if (context->debug_callback)
-	{
-		context->instance.destroyDebugReportCallbackEXT(context->debug_callback);
-		context->debug_callback = nullptr;
-	}
 
 	vkbase.shutdownVulkan();
 }

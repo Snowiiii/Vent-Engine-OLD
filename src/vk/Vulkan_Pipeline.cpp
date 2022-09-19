@@ -7,7 +7,7 @@ vk::ShaderModule VKBase::load_shader_module(const char *filename)
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 	if (!file.is_open())
 	{
-		spdlog::warn("Failed to open Shader file!");
+		spdlog::warn("Failed to open Shader file!, {}", filename);
 	}
 	const auto fileSize = file.tellg();
 	file.seekg(0);
@@ -43,12 +43,14 @@ void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragme
 	vk::PipelineColorBlendAttachmentState blend_attachment;
 	blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
-	vk::PipelineViewportStateCreateInfo viewport;
-	viewport.viewportCount = 1;
-	viewport.scissorCount = 1;
+	vk::PipelineViewportStateCreateInfo viewport({}, 1, nullptr, 1, nullptr);
 
 	// Disable all depth testing.
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil;
+	depth_stencil.depthTestEnable  = true;
+	depth_stencil.depthWriteEnable = true;
+	depth_stencil.depthCompareOp   = vk::CompareOp::eGreater;
+	depth_stencil.back.compareOp   = vk::CompareOp::eGreater;
 
 	vk::PipelineMultisampleStateCreateInfo multisample({}, vk::SampleCountFlagBits::e1);
 
