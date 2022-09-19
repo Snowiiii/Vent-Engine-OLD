@@ -33,11 +33,17 @@ struct Vertex
 struct Texture
 {
     vk::Sampler sampler;
+
     vk::Image image;
+
     vk::ImageLayout image_layout;
+
     vk::DeviceMemory device_memory;
+
     vk::ImageView view;
+
     vk::Extent2D extent;
+    
     uint32_t mip_levels;
 };
 
@@ -124,7 +130,6 @@ struct VulkanContext
     vk::DescriptorPool descriptor_pool;
 
     vk::DescriptorSetLayout descriptor_set_layout;
-
 };
 
 extern VulkanContext *context;

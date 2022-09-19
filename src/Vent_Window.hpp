@@ -10,8 +10,6 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <spdlog/spdlog.h>
-
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_vulkan.h>

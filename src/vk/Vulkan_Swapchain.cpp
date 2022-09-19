@@ -229,6 +229,7 @@ void VKBase::destroySwapchain()
 	for (auto image_view : context->swapchain_image_views)
 	{
 		context->device.destroyImageView(image_view);
+		image_view = nullptr;
 	}
 
 	if (context->swapchain)

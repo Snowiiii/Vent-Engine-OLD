@@ -7,7 +7,7 @@ Vulkan_Image::Vulkan_Image(Vulkan_Model model, const char *path)
     auto *data = stbi_load("../data/images/logo.png", &width, &height, &channels, 4);
     if (!data)
     {
-        spdlog::warn("Could not load image data");
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Could not load image data");
         return;
     }
 
@@ -256,7 +256,7 @@ void Vulkan_Image::flush_command_buffer(vk::CommandBuffer command_buffer, vk::Qu
     vk::Result result = context->device.waitForFences(fence, true, 100000000000);
     if (result != vk::Result::eSuccess)
     {
-        spdlog::error("Failed to flush Command Buffer");
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Failed to flush Command Buffer");
         abort();
     }
 

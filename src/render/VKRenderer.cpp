@@ -2,27 +2,27 @@
 
 Renderer::Renderer()
 {
-	spdlog::debug("Loading VK Renderer");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading VK Renderer");
 	vkbase.initVulkan();
-	spdlog::debug("Creating VK Swapchain");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK Swapchain");
 	vkbase.createSwapchain();
-	spdlog::debug("Creating VK RenderPass");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK RenderPass");
 	vkbase.createRenderPass();
-	spdlog::debug("Loading Models");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading Models");
 	this->loadModels();
-	spdlog::debug("Creating VK Pipeline");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK Pipeline");
 	vkbase.createPipeline("shaders/spv/color.vert.spv", "shaders/spv/color.frag.spv");
 
-	spdlog::debug("Init FrameBuffers");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Init FrameBuffers");
 	this->init_framebuffers();
 }
 
 void Renderer::loadModels()
 {
-	std::vector<Vertex> vertices{  {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-	        {{-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-	        {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-	        {{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
+	std::vector<Vertex> vertices{{{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+								 {{-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
+								 {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+								 {{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
 	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
 	model = std::make_unique<Vulkan_Model>(vertices, indices);
@@ -45,10 +45,10 @@ bool Renderer::resize(const uint32_t, const uint32_t)
 	}
 
 	context->device.waitIdle();
-	teardown_framebuffers();
+	this->teardown_framebuffers();
 
 	vkbase.createSwapchain();
-	init_framebuffers();
+	this->init_framebuffers();
 	return true;
 }
 
@@ -81,16 +81,15 @@ void Renderer::teardown_framebuffers()
 
 Renderer::~Renderer()
 {
-	spdlog::debug("Shutting down Vulkan");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Shutting down Vulkan");
 	context->device.waitIdle();
 
-	teardown_framebuffers();
+	this->teardown_framebuffers();
 
 	if (model)
 	{
 		model.reset();
 	}
-	
 
 	for (auto &per_frame : context->per_frame)
 	{
@@ -124,12 +123,12 @@ void Renderer::update(float delta)
 {
 	uint32_t index;
 
-	auto res = acquire_next_image(index);
+	auto res = this->acquire_next_image(index);
 
 	// Handle outdated error in acquire.
 	if (res == vk::Result::eSuboptimalKHR || res == vk::Result::eErrorOutOfDateKHR)
 	{
-		resize(context->swapchain_dimensions.width, context->swapchain_dimensions.height);
+		this->resize(context->swapchain_dimensions.width, context->swapchain_dimensions.height);
 		res = acquire_next_image(index);
 	}
 
@@ -139,7 +138,7 @@ void Renderer::update(float delta)
 		return;
 	}
 
-	render(index);
+	this->render(index);
 	res = present_image(index);
 
 	// Handle Outdated error in present.
@@ -149,7 +148,7 @@ void Renderer::update(float delta)
 	}
 	else if (res != vk::Result::eSuccess)
 	{
-		spdlog::warn("Failed to present swapchain image.");
+		SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Failed to present swapchain image.");
 	}
 }
 

@@ -57,5 +57,6 @@ void VKBase::destroyRenderpass()
 	if (context->render_pass)
 	{
 		context->device.destroyRenderPass(context->render_pass);
+		context->render_pass = nullptr;
 	}
 }

@@ -12,19 +12,19 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugReportFlagsEXT flags
 {
 	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
 	{
-		spdlog::error("Validation Layer: Error: {}: {}", layer_prefix, message);
+		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Validation Layer: Error: %s: %s", layer_prefix, message);
 	}
 	else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
 	{
-		spdlog::warn("Validation Layer: Warning: {}: {}", layer_prefix, message);
+		SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Validation Layer: Warning: %s: %s", layer_prefix, message);
 	}
 	else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
 	{
-		spdlog::debug("Validation Layer: Performance warning: {}: {}", layer_prefix, message);
+		SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Validation Layer: Performance warning: %s: %s", layer_prefix, message);
 	}
 	else
 	{
-		spdlog::info("Validation Layer: Information: {}: {}", layer_prefix, message);
+		SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Validation Layer: Information: %s: %s", layer_prefix, message);
 	}
 	return VK_FALSE;
 }
@@ -74,7 +74,7 @@ bool validate_layers(const std::vector<const char *> &required,
 											  });
 	if (requiredButNotFoundIt != required.end())
 	{
-		spdlog::error("Validation Layer {} not found", *requiredButNotFoundIt);
+		SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,"Validation Layer %s not found", *requiredButNotFoundIt);
 	}
 	return (requiredButNotFoundIt == required.end());
 }
@@ -108,7 +108,7 @@ std::vector<const char *> get_optimal_validation_layers(const std::vector<vk::La
 			return validation_layers;
 		}
 
-		spdlog::warn("Couldn't enable validation layers (see log for error) - falling back");
+		SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Couldn't enable validation layers (see log for error) - falling back");
 	}
 
 	// Else return nothing
@@ -117,7 +117,7 @@ std::vector<const char *> get_optimal_validation_layers(const std::vector<vk::La
 
 void VKBase::createInstance()
 {
-	spdlog::debug("Creating VKInstance");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VKInstance");
 
 	static vk::DynamicLoader dl;
 	PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr =
@@ -170,10 +170,10 @@ void VKBase::createInstance()
 
 	if (validate_layers(requested_validation_layers, supported_validation_layers))
 	{
-		spdlog::info("Enabled Validation Layers:");
+		SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,"Enabled Validation Layers:");
 		for (const auto &layer : requested_validation_layers)
 		{
-			spdlog::info("	\t{}", layer);
+			SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,"	\t%s", layer);
 		}
 	}
 	else
@@ -218,7 +218,7 @@ void VKBase::createInstance()
 
 void VKBase::selectPhysicalDevice()
 {
-	spdlog::debug("Selecting Physical GPU");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Selecting Physical GPU");
 	std::vector<vk::PhysicalDevice> gpus = context->instance.enumeratePhysicalDevices();
 
 	for (size_t i = 0; i < gpus.size() && (context->graphics_queue_index < 0); i++)
@@ -255,13 +255,13 @@ void VKBase::selectPhysicalDevice()
 
 	if (context->graphics_queue_index < 0)
 	{
-		spdlog::critical("Did not find suitable queue which supports graphics and presentation.");
+		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER,"Did not find suitable queue which supports graphics and presentation.");
 	}
 }
 
 void VKBase::createDevice(const std::vector<const char *> &required_device_extensions)
 {
-	spdlog::debug("Creating VK Device");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Creating VK Device");
 	device_extensions = context->gpu.enumerateDeviceExtensionProperties();
 
 	if (!validate_extensions(required_device_extensions, device_extensions))
@@ -287,7 +287,7 @@ void VKBase::createDevice(const std::vector<const char *> &required_device_exten
 
 void VKBase::createAllocator()
 {
-	spdlog::debug("Creating VK Memory Allocator");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Creating VK Memory Allocator");
 	static vk::DynamicLoader dl;
 
 	VmaVulkanFunctions vma_vulkan_func{};
@@ -361,6 +361,11 @@ void VKBase::initVulkan()
 
 void VKBase::shutdownVulkan()
 {
+	if (context->descriptor_pool)
+	{
+		context->device.destroyDescriptorPool(context->descriptor_pool);
+	}
+
 	if (context->memory_allocator != VK_NULL_HANDLE)
 	{
 		VmaTotalStatistics stats;
@@ -369,7 +374,7 @@ void VKBase::shutdownVulkan()
 
 		if (bytes > 0)
 		{
-			spdlog::warn("Total device memory leaked: {} bytes.", bytes);
+			SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Total device memory leaked: %lu bytes.", bytes);
 		}
 
 		vmaDestroyAllocator(context->memory_allocator);

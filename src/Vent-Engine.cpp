@@ -3,8 +3,8 @@
 int main(int argc, char *argv[])
 {
 #ifndef NDEBUG
-	spdlog::warn("Application running in Debug Mode");
-	spdlog::set_level(spdlog::level::debug);
+	SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION,"Application running in Debug Mode");
+	// spdlog::set_level(spdlog::level::debug);
 #endif
 
 	try
@@ -24,12 +24,12 @@ int main(int argc, char *argv[])
 			delta = ((float)counterElapsed) / (float)perfCounterFrequency;
 			lastCounter = endCounter;
 
-			//	spdlog::debug("FPS {}, {} ms", 1000 / delta, delta);
+			SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "FPS %f, %f ms", 1000 / delta, delta);
 		}
 	}
 	catch (const std::exception &e)
 	{
-		spdlog::critical(e.what());
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, e.what());
 		return -1;
 	}
 

@@ -4,7 +4,7 @@ Vulkan_Model::Vulkan_Model(std::vector<Vertex> pvertices, std::vector<uint32_t> 
 {
     if (!context->device)
     {
-        spdlog::warn("Tried to create Model before VK Device is Initialized");
+        SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,"Tried to create Model before VK Device is Initialized");
         return;
     }
 

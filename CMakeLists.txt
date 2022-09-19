@@ -14,7 +14,6 @@ find_package(Vulkan REQUIRED)
 
 add_subdirectory(deps/glm)
 add_subdirectory(deps/SDL2)
-add_subdirectory(deps/spdlog)
 add_subdirectory(deps/stb)
 
 if(Vulkan_FOUND)
@@ -43,8 +42,6 @@ if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_definitions(glm INTERFACE GLM_FORCE_CXX14)
 endif ()
 
-# spdlog - 1.10.0
-target_link_libraries(vent PUBLIC spdlog)
 
 # stb
 target_link_libraries(vent PUBLIC stb)

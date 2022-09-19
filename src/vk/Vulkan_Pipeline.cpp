@@ -7,7 +7,7 @@ vk::ShaderModule VKBase::load_shader_module(const char *filename)
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 	if (!file.is_open())
 	{
-		spdlog::warn("Failed to open Shader file!, {}", filename);
+		SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "Failed to open Shader file!, %s", filename);
 	}
 	const auto fileSize = file.tellg();
 	file.seekg(0);
@@ -26,8 +26,6 @@ vk::ShaderModule VKBase::load_shader_module(const char *filename)
 
 void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragmentShaderFilename)
 {
-	context->pipeline_layout = context->device.createPipelineLayout({});
-
 	auto bindingDescriptions = Vertex::getBindingDescription();
 	auto attributeDescriptions = Vertex::getAttributeDescriptions();
 	vk::PipelineVertexInputStateCreateInfo vertex_input({}, bindingDescriptions, attributeDescriptions);
@@ -47,10 +45,10 @@ void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragme
 
 	// Disable all depth testing.
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil;
-	depth_stencil.depthTestEnable  = true;
+	depth_stencil.depthTestEnable = true;
 	depth_stencil.depthWriteEnable = true;
-	depth_stencil.depthCompareOp   = vk::CompareOp::eGreater;
-	depth_stencil.back.compareOp   = vk::CompareOp::eGreater;
+	depth_stencil.depthCompareOp = vk::CompareOp::eGreater;
+	depth_stencil.back.compareOp = vk::CompareOp::eGreater;
 
 	vk::PipelineMultisampleStateCreateInfo multisample({}, vk::SampleCountFlagBits::e1);
 
@@ -92,10 +90,6 @@ void VKBase::destroyPipeline()
 	if (context->pipeline)
 	{
 		context->device.destroyPipeline(context->pipeline);
-	}
-
-	if (context->pipeline_layout)
-	{
-		context->device.destroyPipelineLayout(context->pipeline_layout);
+		context->pipeline = nullptr;
 	}
 }

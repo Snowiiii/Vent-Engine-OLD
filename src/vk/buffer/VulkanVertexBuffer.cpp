@@ -33,7 +33,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(
     
     if (result != VK_SUCCESS)
 	{
-		spdlog::error("Can't create VMA Buffer");
+		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Can't create VMA Buffer");
         return;
 	}
 

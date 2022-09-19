@@ -4,14 +4,14 @@ Vent_Window::Vent_Window(uint32_t width, uint32_t height, const char *title) : w
 {
 	if (SDL_Init(SDL_INIT_VIDEO))
 	{
-		spdlog::critical("Error initializing SDL: {}", SDL_GetError());
+		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO,"Error initializing SDL: %s", SDL_GetError());
 		exit(1);
 	}
 
 	handle = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 	if (!handle)
 	{
-		spdlog::critical("Error creating SDL window");
+		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO,"Error creating SDL window");
 		exit(1);
 	}
 }
