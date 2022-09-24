@@ -50,6 +50,12 @@ public:
 
 	void update(const std::vector<uint8_t> &data, size_t offset = 0);
 
+	template <class T>
+	void convert_and_update(const T &object, size_t offset = 0)
+	{
+		update(reinterpret_cast<const uint8_t *>(&object), sizeof(T), offset);
+	}
+
 	vk::Buffer get_handle() const
 	{
 		return static_cast<vk::Buffer>(handle);

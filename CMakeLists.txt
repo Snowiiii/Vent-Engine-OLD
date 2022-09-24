@@ -7,7 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 # Sets C++ standard rquired to true
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(SHADER_SOURCE_DIR ${PROJECT_SOURCE_DIR}/shaders)
+set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/assets)
+set(ASSETS_SOURCE_DIR_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/assets)
 
 # find vulkan
 find_package(Vulkan REQUIRED)
@@ -118,11 +119,19 @@ option(SDL_INSTALL_TESTS OFF)
 # SDL2 - 2.24.0
 target_link_libraries(vent PUBLIC SDL2-static)
 
-# target_precompile_headers(${PROJECT_NAME} PRIVATE <vulkan/vulkan.hpp>)
+target_precompile_headers(vent PRIVATE <vulkan/vulkan.hpp>)
+
+# copy textures
+set(TEXTURES_SOURCE_DIR ${ASSETS_SOURCE_DIR}/textures)
+set(TEXTURES_SOURCE_DIR_OUT ${ASSETS_SOURCE_DIR_OUTPUT}/textures)
+
+message("Copying Textures")
+# file(COPY ${TEXTURES_SOURCE_DIR} DESTINATION ${TEXTURES_SOURCE_DIR_OUT})
 
 # Vulkan
 if (Vulkan_FOUND)
-    set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders/spv)
+    set(SHADER_BINARY_DIR ${ASSETS_SOURCE_DIR_OUTPUT}/shaders)
+    set(SHADER_SOURCE_DIR ${ASSETS_SOURCE_DIR}/shaders)
 
     file(GLOB SHADERS
             ${SHADER_SOURCE_DIR}/*.vert
@@ -162,5 +171,26 @@ if (Vulkan_FOUND)
 endif (Vulkan_FOUND)
 
 
-# TODO: Add tests and install targets if needed.
+# Testing
+
+enable_testing()
+
+add_test(NAME Runs COMMAND vent)
+
+# CPack
+
+include(InstallRequiredSystemLibraries)
+set (CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CMake_VERSION}")
+set (CPACK_SOURCE_PACKAGE_FILE_NAME ${CPACK_PACKAGE_FILE_NAME})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
+set (CPACK_PACKAGE_ICON "${ASSETS_SOURCE_DIR}textures/icons/icon_128.png")
+set(CPACK_PACKAGE_VERSION_MAJOR "${Vent_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${Vent_VERSION_MINOR}")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+include(CPack)
+
+set (CPACK_SOURCE_IGNORE_FILES
+ "/CVS/" "/\\\\.build/" "/\\\\.svn/" "\\\\.swp$" "\\\\.#" "/#" "~$")
+
+
 

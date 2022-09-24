@@ -10,9 +10,13 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <string>
+
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_vulkan.h>
+
+#include "objects/Camera.hpp"
 
 class Vent_Window
 {
@@ -30,11 +34,9 @@ public:
 
     Vent_Window &operator=(const Vent_Window &) = delete;
 
-    vk::Extent2D getExtent() const { return {width, height}; }
-
     vk::SurfaceKHR createSurface(vk::Instance instance);
 
-    bool handleEvents();  
+    bool handleEvents(Camera &renderer);  
 
 private:
 };

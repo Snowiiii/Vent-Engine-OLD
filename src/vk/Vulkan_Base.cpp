@@ -74,7 +74,7 @@ bool validate_layers(const std::vector<const char *> &required,
 											  });
 	if (requiredButNotFoundIt != required.end())
 	{
-		SDL_LogWarn(SDL_LOG_CATEGORY_RENDER,"Validation Layer %s not found", *requiredButNotFoundIt);
+		SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Validation Layer %s not found", *requiredButNotFoundIt);
 	}
 	return (requiredButNotFoundIt == required.end());
 }
@@ -124,12 +124,20 @@ void VKBase::createInstance()
 		dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
 
-	std::vector<vk::ExtensionProperties> instance_extensions = vk::enumerateInstanceExtensionProperties();
+	const std::vector<vk::ExtensionProperties> instance_extensions = vk::enumerateInstanceExtensionProperties();
 
 	uint32_t instanceExtensionCount;
-	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, 0);
+	if (!SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, nullptr))
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Failed to Vulkan Instance Extensions count from SDL");
+		return;
+	}
 	const char **enabledInstanceExtensions = new const char *[instanceExtensionCount];
-	SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, enabledInstanceExtensions);
+	if (!SDL_Vulkan_GetInstanceExtensions(window.handle, &instanceExtensionCount, enabledInstanceExtensions))
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Failed to Vulkan Instance Extensions from SDL");
+		return;
+	}
 
 	std::vector<const char *> active_instance_extensions(enabledInstanceExtensions, enabledInstanceExtensions + instanceExtensionCount);
 
@@ -158,22 +166,22 @@ void VKBase::createInstance()
 		throw std::runtime_error("Required instance extensions are missing.");
 	}
 
-	std::vector<vk::LayerProperties> supported_validation_layers = vk::enumerateInstanceLayerProperties();
+	const std::vector<vk::LayerProperties> supported_validation_layers = vk::enumerateInstanceLayerProperties();
 
 	std::vector<const char *> requested_validation_layers;
 
 #ifdef VALIDATION_LAYERS
 	// Determine the optimal validation layers to enable that are necessary for useful debugging
-	std::vector<const char *> optimal_validation_layers = get_optimal_validation_layers(supported_validation_layers);
+	const std::vector<const char *> optimal_validation_layers = get_optimal_validation_layers(supported_validation_layers);
 	requested_validation_layers.insert(requested_validation_layers.end(), optimal_validation_layers.begin(), optimal_validation_layers.end());
 #endif
 
 	if (validate_layers(requested_validation_layers, supported_validation_layers))
 	{
-		SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,"Enabled Validation Layers:");
+		SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "Enabled Validation Layers:");
 		for (const auto &layer : requested_validation_layers)
 		{
-			SDL_LogInfo(SDL_LOG_CATEGORY_RENDER,"	\t%s", layer);
+			SDL_LogInfo(SDL_LOG_CATEGORY_RENDER, "	\t%s", layer);
 		}
 	}
 	else
@@ -182,17 +190,17 @@ void VKBase::createInstance()
 	}
 
 	// vulkan application info
-	vk::ApplicationInfo app("Vent-Engine",
-							VK_MAKE_VERSION(1, 0, 0),
-							"Vent-Engine",
-							VK_MAKE_VERSION(1, 0, 0),
-							VK_API_VERSION_1_2);
+	const vk::ApplicationInfo app("Vent-Engine",
+								  VK_MAKE_VERSION(1, 0, 0),
+								  "Vent-Engine",
+								  VK_MAKE_VERSION(1, 0, 0),
+								  VK_API_VERSION_1_2);
 
 	// vulkan instance info
 	vk::InstanceCreateInfo instance_info({}, &app, requested_validation_layers, active_instance_extensions);
 
 #ifdef VALIDATION_LAYERS
-	vk::DebugReportCallbackCreateInfoEXT debug_report_create_info(vk::DebugReportFlagBitsEXT::eError | vk::DebugReportFlagBitsEXT::eWarning, debug_callback);
+	const vk::DebugReportCallbackCreateInfoEXT debug_report_create_info(vk::DebugReportFlagBitsEXT::eError | vk::DebugReportFlagBitsEXT::eWarning, debug_callback);
 
 	instance_info.pNext = &debug_report_create_info;
 
@@ -218,14 +226,14 @@ void VKBase::createInstance()
 
 void VKBase::selectPhysicalDevice()
 {
-	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Selecting Physical GPU");
-	std::vector<vk::PhysicalDevice> gpus = context->instance.enumeratePhysicalDevices();
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Selecting Physical GPU");
+	const std::vector<vk::PhysicalDevice> gpus = context->instance.enumeratePhysicalDevices();
 
 	for (size_t i = 0; i < gpus.size() && (context->graphics_queue_index < 0); i++)
 	{
 		context->gpu = gpus[i];
 
-		std::vector<vk::QueueFamilyProperties> queue_family_properties = context->gpu.getQueueFamilyProperties();
+		const std::vector<vk::QueueFamilyProperties> queue_family_properties = context->gpu.getQueueFamilyProperties();
 
 		if (queue_family_properties.empty())
 		{
@@ -255,13 +263,13 @@ void VKBase::selectPhysicalDevice()
 
 	if (context->graphics_queue_index < 0)
 	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER,"Did not find suitable queue which supports graphics and presentation.");
+		SDL_LogCritical(SDL_LOG_CATEGORY_RENDER, "Did not find suitable queue which supports graphics and presentation.");
 	}
 }
 
 void VKBase::createDevice(const std::vector<const char *> &required_device_extensions)
 {
-	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Creating VK Device");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK Device");
 	device_extensions = context->gpu.enumerateDeviceExtensionProperties();
 
 	if (!validate_extensions(required_device_extensions, device_extensions))
@@ -269,29 +277,38 @@ void VKBase::createDevice(const std::vector<const char *> &required_device_exten
 		throw std::runtime_error("Required device extensions are missing, will try without.");
 	}
 
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Enables GPU Features");
+
+	vk::PhysicalDeviceFeatures features;
+	if (context->gpu.getFeatures().samplerAnisotropy)
+	{
+		features.samplerAnisotropy = true;
+	}
+
 	float queue_priority = 1.0f;
 
 	// Create one queue
 	vk::DeviceQueueCreateInfo queue_info({}, context->graphics_queue_index, 1, &queue_priority);
 
-	vk::DeviceCreateInfo device_info({}, queue_info, {}, required_device_extensions);
+	const vk::DeviceCreateInfo device_info({}, queue_info, {}, required_device_extensions, &features);
 
 	context->device = context->gpu.createDevice(device_info);
 	// initialize function pointers for device
 	VULKAN_HPP_DEFAULT_DISPATCHER.init(context->device);
 
-	//	volkLoadDevice(context->device);
+#if defined(VK_USE_PLATFORM_DISPLAY_KHR)
+	volkLoadDevice(context->device);
+#endif
 
 	context->queue = context->device.getQueue(context->graphics_queue_index, 0);
 }
 
 void VKBase::createAllocator()
 {
-	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER,"Creating VK Memory Allocator");
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK Memory Allocator");
 	static vk::DynamicLoader dl;
 
 	VmaVulkanFunctions vma_vulkan_func{};
-
 	vma_vulkan_func.vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
 	vma_vulkan_func.vkGetDeviceProcAddr = dl.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
 
@@ -316,18 +333,24 @@ void VKBase::createAllocator()
 	auto result = vmaCreateAllocator(&allocator_info, &context->memory_allocator);
 }
 
+void VKBase::createCommandPool()
+{
+	vk::CommandPoolCreateInfo cmd_pool_info(vk::CommandPoolCreateFlagBits::eTransient, context->graphics_queue_index);
+	context->command_pool = context->device.createCommandPool(cmd_pool_info);
+}
+
 void VKBase::createDescriptorPool()
 {
-	std::array<vk::DescriptorPoolSize, 2> pool_sizes = {{{vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1}}};
+	const std::array<vk::DescriptorPoolSize, 2> pool_sizes = {{{vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1}}};
 
-	vk::DescriptorPoolCreateInfo descriptor_pool_create_info({}, 2, pool_sizes);
+	const vk::DescriptorPoolCreateInfo descriptor_pool_create_info({}, 2, pool_sizes);
 
 	context->descriptor_pool = context->device.createDescriptorPool(descriptor_pool_create_info);
 }
 
 void VKBase::createDescriptorSetLayoutBinding()
 {
-	std::array<vk::DescriptorSetLayoutBinding, 2> set_layout_bindings = {
+	const std::array<vk::DescriptorSetLayoutBinding, 2> set_layout_bindings = {
 		{{0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex},
 		 {1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}}};
 
@@ -349,12 +372,14 @@ void VKBase::initVulkan()
 	this->createInstance();
 	this->selectPhysicalDevice();
 
-	const auto &extent = window.getExtent();
-	context->swapchain_dimensions.width = extent.width;
-	context->swapchain_dimensions.height = extent.height;
+	int width, height;
+	SDL_Vulkan_GetDrawableSize(window.handle, &width, &height);
+	context->swapchain_dimensions.width = width;
+	context->swapchain_dimensions.height = height;
 
 	this->createDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 	this->createAllocator();
+	this->createCommandPool();
 	this->createDescriptorPool();
 	this->createDescriptorSetLayoutBinding();
 }
@@ -366,11 +391,16 @@ void VKBase::shutdownVulkan()
 		context->device.destroyDescriptorPool(context->descriptor_pool);
 	}
 
+	if (context->command_pool)
+	{
+		context->device.destroyCommandPool(context->command_pool);
+	}
+
 	if (context->memory_allocator != VK_NULL_HANDLE)
 	{
 		VmaTotalStatistics stats;
 		vmaCalculateStatistics(context->memory_allocator, &stats);
-		VkDeviceSize bytes = stats.total.statistics.allocationBytes;
+		const VkDeviceSize bytes = stats.total.statistics.allocationBytes;
 
 		if (bytes > 0)
 		{

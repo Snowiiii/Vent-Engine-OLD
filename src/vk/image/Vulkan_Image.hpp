@@ -4,28 +4,28 @@
 #include "../Vulkan_Model.hpp"
 #include "../buffer/VulkanVertexBuffer.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <memory>
 #include <vector>
 
 class Vulkan_Image
 {
 private:
-    vk::CommandPool command_pool;
+    // vk::CommandPool command_pool;
     vk::DescriptorSet descriptor_set;
 
     Texture texture;
 
     void createImage();
 
-    void upload(stbi_uc* data, int width, int height);
+    void upload(u_char *data, uint32_t width, uint32_t height);
 
-    void createDescriptorSet();
+    void createDescriptorSet(const vk::DescriptorBufferInfo &buffer_descriptor);
 
-    void flush_command_buffer(vk::CommandBuffer command_buffer, vk::Queue queue, bool free = true, vk::Semaphore signalSemaphore = VK_NULL_HANDLE) const;
+    void flush_command_buffer(const vk::CommandBuffer &command_buffer, vk::Queue queue, bool free = true, vk::Semaphore signalSemaphore = VK_NULL_HANDLE) const;
 
 public:
-    Vulkan_Image(Vulkan_Model model, const char *path);
+    Vulkan_Image(const vk::DescriptorBufferInfo &buffer_descriptor, const std::string &path);
     ~Vulkan_Image();
+
+    void bind(const vk::CommandBuffer &buffer) const;
 };

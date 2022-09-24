@@ -16,14 +16,14 @@ private:
     uint32_t index_count;
 
 public:
-    Vulkan_Model(std::vector<Vertex> vertices, std::vector<uint32_t> pindices);
+    Vulkan_Model(std::vector<Vertex> &vertices, std::vector<uint32_t> &pindices);
     ~Vulkan_Model();
 
     Vulkan_Model(const Vulkan_Model &) = delete;
     Vulkan_Model &operator=(const Vulkan_Model &) = delete;
 
-    static uint32_t get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32 *memory_type_found = nullptr) ;
+    static uint32_t get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32 *memory_type_found = nullptr);
 
-    void bind(vk::CommandBuffer commandBuffer);
-    void draw(vk::CommandBuffer commandBuffer);
+    void bind(const vk::CommandBuffer &commandBuffer) const;
+    void draw(const vk::CommandBuffer &commandBuffer) const;
 };

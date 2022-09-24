@@ -2,12 +2,12 @@
 
 #include <fstream>
 
-vk::ShaderModule VKBase::load_shader_module(const char *filename)
+vk::ShaderModule VKBase::load_shader_module(const std::string &filename)
 {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 	if (!file.is_open())
 	{
-		SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "Failed to open Shader file!, %s", filename);
+		SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "Failed to open Shader file!, %s", filename.c_str());
 	}
 	const auto fileSize = file.tellg();
 	file.seekg(0);
@@ -24,7 +24,7 @@ vk::ShaderModule VKBase::load_shader_module(const char *filename)
 	return context->device.createShaderModule(createInfo);
 }
 
-void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragmentShaderFilename)
+void VKBase::createPipeline(const std::string &vertexShaderFilename, const std::string &fragmentShaderFilename)
 {
 	auto bindingDescriptions = Vertex::getBindingDescription();
 	auto attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -33,8 +33,9 @@ void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragme
 	const vk::PipelineInputAssemblyStateCreateInfo input_assembly({}, vk::PrimitiveTopology::eTriangleList);
 
 	vk::PipelineRasterizationStateCreateInfo raster;
-	raster.cullMode = vk::CullModeFlagBits::eBack;
-	raster.frontFace = vk::FrontFace::eClockwise;
+	raster.polygonMode = vk::PolygonMode::eFill;
+	raster.cullMode = vk::CullModeFlagBits::eNone;
+	raster.frontFace = vk::FrontFace::eCounterClockwise;
 	raster.lineWidth = 1.0f;
 
 	// vulkan pipeline color blend state
@@ -83,6 +84,7 @@ void VKBase::createPipeline(const char *vertexShaderFilename, const char *fragme
 	// Pipeline is baked, we can delete the shader modules now.
 	context->device.destroyShaderModule(shader_stages[0].module);
 	context->device.destroyShaderModule(shader_stages[1].module);
+
 }
 
 void VKBase::destroyPipeline()

@@ -4,6 +4,8 @@
 #include <vk_mem_alloc.h>
 #include <volk.h>
 
+#include "../objects/Camera.hpp"
+
 #include <glm/glm.hpp>
 
 #include <cassert>
@@ -18,16 +20,11 @@
 struct Vertex
 {
     glm::vec3 pos;
-    glm::vec2 uv;
+    glm::vec2 uv; // Tex Coords
     glm::vec3 normal;
 
     static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions();
     static vk::VertexInputBindingDescription getBindingDescription();
-
-    bool operator==(const Vertex &other) const
-    {
-        return pos == other.pos;
-    }
 };
 
 struct Texture
@@ -43,7 +40,7 @@ struct Texture
     vk::ImageView view;
 
     vk::Extent2D extent;
-    
+
     uint32_t mip_levels;
 };
 
@@ -111,6 +108,8 @@ struct VulkanContext
     /// The renderpass description.
     vk::RenderPass render_pass;
 
+    vk::CommandPool command_pool;
+
     /// The graphics pipeline.
     vk::Pipeline pipeline;
 
@@ -148,13 +147,15 @@ private:
 
     void createAllocator();
 
+    void createCommandPool();
+
     void createDescriptorPool();
 
     void createDescriptorSetLayoutBinding();
 
     bool is_extension_supported(std::string const &requested_extension) const;
 
-    vk::ShaderModule load_shader_module(const char *filename);
+    vk::ShaderModule load_shader_module(const std::string &filename);
 
 public:
     VKBase(const Vent_Window &window);
@@ -171,7 +172,7 @@ public:
 
     void createRenderPass();
 
-    void createPipeline(const char *vertexShaderFilename, const char *fragmentShaderFilename);
+    void createPipeline(const std::string &vertexShaderFilename, const std::string &fragmentShaderFilename);
 
     void destroyRenderpass();
 

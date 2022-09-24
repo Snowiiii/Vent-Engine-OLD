@@ -4,14 +4,14 @@ Vent_Window::Vent_Window(uint32_t width, uint32_t height, const char *title) : w
 {
 	if (SDL_Init(SDL_INIT_VIDEO))
 	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO,"Error initializing SDL: %s", SDL_GetError());
+		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO, "Error initializing SDL: %s", SDL_GetError());
 		exit(1);
 	}
 
 	handle = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 	if (!handle)
 	{
-		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO,"Error creating SDL window");
+		SDL_LogCritical(SDL_LOG_CATEGORY_VIDEO, "Error creating SDL window");
 		exit(1);
 	}
 }
@@ -22,7 +22,7 @@ Vent_Window::~Vent_Window()
 	SDL_Quit();
 }
 
-bool Vent_Window::handleEvents()
+bool Vent_Window::handleEvents(Camera &camera)
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
@@ -31,6 +31,10 @@ bool Vent_Window::handleEvents()
 		{
 		case SDL_QUIT:
 			return false;
+		break;
+		case SDL_KEYDOWN:
+			camera.handleInput(event.key.keysym);
+			break;
 		}
 	}
 	return true;
