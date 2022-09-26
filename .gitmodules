@@ -16,4 +16,9 @@
 [submodule "deps/stb"]
 	path = deps/stb
 	url = https://github.com/nothings/stb
-
+[submodule "deps/fast_obj"]
+	path = deps/fast_obj
+	url = https://github.com/thisistherk/fast_obj.git
+[submodule "deps/meshoptimizer"]
+	path = deps/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer.git
