@@ -1,4 +1,4 @@
-#include "Vulkan_Mesh.hpp"
+#include "mesh/Vulkan_Mesh.hpp"
 
 #include <fstream>
 
@@ -35,7 +35,7 @@ void VKBase::createPipeline(const std::string_view &vertexShaderFilename, const 
 	vk::PipelineRasterizationStateCreateInfo raster;
 	raster.polygonMode = vk::PolygonMode::eFill;
 	raster.cullMode = vk::CullModeFlagBits::eNone;
-	raster.frontFace = vk::FrontFace::eCounterClockwise;
+	raster.frontFace = vk::FrontFace::eClockwise;
 	raster.lineWidth = 1.0f;
 
 	// vulkan pipeline color blend state
@@ -49,7 +49,6 @@ void VKBase::createPipeline(const std::string_view &vertexShaderFilename, const 
 	depth_stencil.depthTestEnable = true;
 	depth_stencil.depthWriteEnable = true;
 	depth_stencil.depthCompareOp = vk::CompareOp::eGreater;
-	depth_stencil.back.compareOp = vk::CompareOp::eGreater;
 
 	vk::PipelineMultisampleStateCreateInfo multisample({}, vk::SampleCountFlagBits::e1);
 

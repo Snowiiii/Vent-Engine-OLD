@@ -1,6 +1,6 @@
 #include "Vent_Window.hpp"
 
-Vent_Window::Vent_Window(uint32_t width, uint32_t height, const std::string_view &title) : width(width), height(height)
+Vent_Window::Vent_Window(const uint32_t &width,const uint32_t &height, const std::string_view &title) : width(width), height(height)
 {
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
 	{

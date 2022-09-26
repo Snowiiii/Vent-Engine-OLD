@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Vulkan_Base.hpp"
+#include "../Vulkan_Mesh.hpp"
 
 #include <string_view>
 #include <vector>
@@ -9,10 +9,10 @@
 
 class MeshFormatLoader
 {
-private:
-public:
+protected:
     std::vector<Vertex> _vertices;
     std::vector<uint32_t> _indices;
+public:
     
     std::vector<Vertex> &getVertices() { return _vertices; }
 

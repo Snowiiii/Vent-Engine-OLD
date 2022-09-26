@@ -178,7 +178,7 @@ void VKBase::createInstance()
 								  VK_MAKE_VERSION(1, 0, 0),
 								  "Vent-Engine",
 								  VK_MAKE_VERSION(1, 0, 0),
-								  VK_API_VERSION_1_2);
+								  VK_API_VERSION_1_3);
 
 	// vulkan instance info
 	vk::InstanceCreateInfo instance_info({}, &app, requested_validation_layers, active_instance_extensions);
@@ -217,7 +217,7 @@ void VKBase::selectPhysicalDevice()
 	{
 		context->gpu = gpus[i];
 
-		const std::vector<vk::QueueFamilyProperties> queue_family_properties = context->gpu.getQueueFamilyProperties();
+		const std::vector<vk::QueueFamilyProperties2> queue_family_properties = context->gpu.getQueueFamilyProperties2();
 
 		if (queue_family_properties.empty())
 		{
@@ -237,7 +237,7 @@ void VKBase::selectPhysicalDevice()
 			vk::Bool32 supports_present = context->gpu.getSurfaceSupportKHR(j, context->surface);
 
 			// Find a queue family which supports graphics and presentation.
-			if ((queue_family_properties[j].queueFlags & vk::QueueFlagBits::eGraphics) && supports_present)
+			if ((queue_family_properties[j].queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) && supports_present)
 			{
 				context->graphics_queue_index = j;
 				break;
@@ -297,7 +297,7 @@ void VKBase::createAllocator()
 	vma_vulkan_func.vkGetDeviceProcAddr = dl.getProcAddress<PFN_vkGetDeviceProcAddr>("vkGetDeviceProcAddr");
 
 	VmaAllocatorCreateInfo allocator_info{};
-	allocator_info.vulkanApiVersion = VK_API_VERSION_1_2;
+	allocator_info.vulkanApiVersion = VK_API_VERSION_1_3;
 	allocator_info.physicalDevice = static_cast<VkPhysicalDevice>(context->gpu);
 	allocator_info.device = static_cast<VkDevice>(context->device);
 	allocator_info.instance = static_cast<VkInstance>(context->instance);

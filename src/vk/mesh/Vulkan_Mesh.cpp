@@ -3,7 +3,7 @@
 Vulkan_Mesh::Vulkan_Mesh(const std::string_view &path)
 {
     OBJMeshFormatLoader loader(path);
-    createBuffers(loader.getVertices(), loader.getIndices());
+    this->createBuffers(loader.getVertices(), loader.getIndices());
 }
 
 Vulkan_Mesh::Vulkan_Mesh(std::vector<Vertex> &pvertices, std::vector<uint32_t> &pindices)
@@ -80,7 +80,7 @@ void Vulkan_Mesh::bind(const vk::CommandBuffer &commandBuffer, const uint32_t in
     }
 
     vk::DeviceSize offset = 0;
-    commandBuffer.bindVertexBuffers(0, vertex_buffer->get_handle(), offset);
+    commandBuffer.bindVertexBuffers2(0, vertex_buffer->get_handle(), offset);
     commandBuffer.bindIndexBuffer(index_buffer->get_handle(), 0, vk::IndexType::eUint32);
 }
 

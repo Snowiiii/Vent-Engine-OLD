@@ -4,7 +4,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "../Vulkan_Mesh.hpp"
+#include "../mesh/Vulkan_Mesh.hpp"
 
 #include <memory>
 

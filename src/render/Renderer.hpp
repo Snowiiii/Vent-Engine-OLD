@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../vk/Vulkan_Base.hpp"
-#include "../vk/Vulkan_Mesh.hpp"
+#include "../vk/mesh/Vulkan_Mesh.hpp"
 
 #include "ObjectRenderer.hpp"
 
@@ -25,6 +25,9 @@ private:
     std::unique_ptr<Vulkan_3D_Unifrom> uniform;
 
     std::unique_ptr<ObjectRenderer> objectRenderer;
+
+    std::unique_ptr<VulkanImage> depth_image;
+
 
     bool resize(const uint32_t,const uint32_t);
 

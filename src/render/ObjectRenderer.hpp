@@ -3,7 +3,7 @@
 #include "../vk/Vulkan_Base.hpp"
 
 #include "../vk/uniform/Vulkan_3D_Unifrom.hpp"
-#include "../vk/Vulkan_Mesh.hpp"
+#include "../vk/mesh/Vulkan_Mesh.hpp"
 
 #include <memory>
 #include <vector>

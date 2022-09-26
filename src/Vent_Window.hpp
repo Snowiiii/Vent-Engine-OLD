@@ -26,7 +26,7 @@ public:
 
     uint32_t width, height;
 
-    Vent_Window(uint32_t width, uint32_t height, const std::string_view &title);
+    Vent_Window(const uint32_t &width, const uint32_t &height, const std::string_view &title);
 
     ~Vent_Window();
 

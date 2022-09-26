@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(vent VERSION 1.0.0)
 
-# Sets C++ standard to c++20
+# Sets C++ standard to c++23
 set(CMAKE_CXX_STANDARD 23)
 # Sets C++ standard rquired to true
 set(CMAKE_CXX_STANDARD_REQUIRED True)

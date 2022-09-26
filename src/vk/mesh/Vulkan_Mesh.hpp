@@ -1,11 +1,9 @@
 #pragma once
 
-#include "Vulkan_Base.hpp"
-#include "buffer/VulkanVertexBuffer.hpp"
+#include "../Vulkan_Base.hpp"
+#include "../buffer/VulkanVertexBuffer.hpp"
 
-#include "image/Vulkan_Image.hpp"
-
-#include "../objects/GameObject.hpp"
+#include "../image/Vulkan_Image.hpp"
 
 #include "format/OBJMeshFormatLoader.hpp"
 

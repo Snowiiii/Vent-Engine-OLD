@@ -29,8 +29,8 @@ Renderer::Renderer()
 void Renderer::loadModels()
 {
 	vk::DescriptorBufferInfo buffer_descriptor(uniform->getBuffer(), 0, sizeof(Vulkan_3D_Unifrom::ubo_vs));
-	std::unique_ptr<Vulkan_Mesh> model = std::make_unique<Vulkan_Mesh>("assets/meshes/dragon.obj");
-	model->setTexture(buffer_descriptor, "assets/textures/texture.png");
+	std::unique_ptr<Vulkan_Mesh> model = std::make_unique<Vulkan_Mesh>("assets/meshes/tree.obj");
+	model->setTexture(buffer_descriptor, "assets/textures/tree.png");
 
 	objectRenderer->addModel(model);
 }
@@ -68,11 +68,16 @@ void Renderer::init_framebuffers()
 {
 	vk::Device device = context->device;
 
+	int32_t width, height;
+	SDL_Vulkan_GetDrawableSize(window.handle, &width, &height);
+	depth_image = std::make_unique<VulkanImage>(vk::Format::eD32Sfloat, width, height);
+
 	// Create framebuffer for each swapchain image view
 	for (auto &image_view : context->swapchain_image_views)
 	{
 		// Build the framebuffer.
-		vk::FramebufferCreateInfo fb_info({}, context->render_pass, image_view, context->swapchain_dimensions.width, context->swapchain_dimensions.height, 1);
+		std::array<vk::ImageView, 2> views = {image_view, depth_image->getTexture().view};
+		vk::FramebufferCreateInfo fb_info({}, context->render_pass, views.size(), views.data(), context->swapchain_dimensions.width, context->swapchain_dimensions.height, 1);
 
 		context->swapchain_framebuffers.push_back(device.createFramebuffer(fb_info));
 	}
@@ -97,6 +102,11 @@ Renderer::~Renderer()
 	context->device.waitIdle();
 
 	this->teardown_framebuffers();
+
+	if (depth_image)
+	{
+		depth_image.reset();
+	}
 
 	if (objectRenderer)
 	{

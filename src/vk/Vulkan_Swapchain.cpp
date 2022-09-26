@@ -116,7 +116,7 @@ void VKBase::createSwapchain()
 
 	if (old_swapchain)
 	{
-		for (vk::ImageView image_view : context->swapchain_image_views)
+		for (auto &image_view : context->swapchain_image_views)
 		{
 			context->device.destroyImageView(image_view);
 		}
