@@ -44,7 +44,7 @@ void VKBase::createRenderPass()
 	// Since we changed the image layout, we need to make the memory visible to
 	// color attachment to modify.
 	dependency.srcAccessMask = {};
-	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
 
 	// Finally, create the renderpass.
 	vk::RenderPassCreateInfo rp_info({}, attachment, subpass, dependency);

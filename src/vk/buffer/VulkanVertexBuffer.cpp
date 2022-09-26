@@ -8,39 +8,45 @@ VulkanVertexBuffer::VulkanVertexBuffer(
     VmaAllocationCreateFlags flags,
     const std::vector<uint32_t> &queue_family_indices) : size(size)
 {
-
-    persistent = (flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) != 0;
-
-    VkBufferCreateInfo buffer_info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    buffer_info.usage = buffer_usage;
-    buffer_info.size = size;
-    if (queue_family_indices.size() >= 2)
+    try
     {
-        buffer_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        buffer_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_family_indices.size());
-        buffer_info.pQueueFamilyIndices = queue_family_indices.data();
+
+        persistent = (flags & VMA_ALLOCATION_CREATE_MAPPED_BIT) != 0;
+
+        VkBufferCreateInfo buffer_info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        buffer_info.usage = buffer_usage;
+        buffer_info.size = size;
+        if (queue_family_indices.size() >= 2)
+        {
+            buffer_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+            buffer_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_family_indices.size());
+            buffer_info.pQueueFamilyIndices = queue_family_indices.data();
+        }
+
+        VmaAllocationCreateInfo memory_info{};
+        memory_info.flags = flags;
+        memory_info.usage = memory_usage;
+
+        VmaAllocationInfo allocation_info{};
+        auto result = vmaCreateBuffer(context->memory_allocator,
+                                      &buffer_info, &memory_info,
+                                      &handle, &allocation,
+                                      &allocation_info);
+
+        if (result != VK_SUCCESS)
+        {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Can't create VMA Buffer");
+            return;
+        }
+
+        if (persistent)
+        {
+            mapped_data = static_cast<uint8_t *>(allocation_info.pMappedData);
+        }
     }
-
-    VmaAllocationCreateInfo memory_info{};
-    memory_info.flags = flags;
-    memory_info.usage = memory_usage;
-
-    VmaAllocationInfo allocation_info{};
-    auto result = vmaCreateBuffer(context->memory_allocator,
-                                  &buffer_info, &memory_info,
-                                  &handle, &allocation,
-                                  &allocation_info);
-    
-    if (result != VK_SUCCESS)
-	{
-		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Can't create VMA Buffer");
-        return;
-	}
-
-
-    if (persistent)
+    catch (const std::exception &e)
     {
-        mapped_data = static_cast<uint8_t *>(allocation_info.pMappedData);
+        throw std::runtime_error("Failed to create VMA Buffer");
     }
 }
 
@@ -94,7 +100,7 @@ VulkanVertexBuffer::~VulkanVertexBuffer()
 {
     if (handle != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE)
     {
-        unmap(); 
+        unmap();
         vmaDestroyBuffer(context->memory_allocator, handle, allocation);
     }
 }

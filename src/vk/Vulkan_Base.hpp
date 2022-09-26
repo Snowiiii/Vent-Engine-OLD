@@ -5,6 +5,7 @@
 #include <volk.h>
 
 #include "../objects/Camera.hpp"
+#include "../objects/GameObject.hpp"
 
 #include <glm/glm.hpp>
 
@@ -33,9 +34,9 @@ struct Texture
 
     vk::Image image;
 
-    vk::ImageLayout image_layout;
+    VmaAllocation allocation;
 
-    vk::DeviceMemory device_memory;
+    vk::ImageLayout image_layout;
 
     vk::ImageView view;
 
@@ -155,7 +156,7 @@ private:
 
     bool is_extension_supported(std::string const &requested_extension) const;
 
-    vk::ShaderModule load_shader_module(const std::string &filename);
+    vk::ShaderModule load_shader_module(const std::string_view &filename);
 
 public:
     VKBase(const Vent_Window &window);
@@ -172,7 +173,7 @@ public:
 
     void createRenderPass();
 
-    void createPipeline(const std::string &vertexShaderFilename, const std::string &fragmentShaderFilename);
+    void createPipeline(const std::string_view &vertexShaderFilename, const std::string_view &fragmentShaderFilename);
 
     void destroyRenderpass();
 

@@ -145,22 +145,6 @@ void VKBase::createInstance()
 	active_instance_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 #endif
 
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-	active_instance_extensions.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_WIN32_KHR)
-	active_instance_extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_METAL_EXT)
-	active_instance_extensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-	active_instance_extensions.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-	active_instance_extensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-	active_instance_extensions.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_DISPLAY_KHR)
-	active_instance_extensions.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
-#endif
-
 	if (!validate_extensions(active_instance_extensions, instance_extensions))
 	{
 		throw std::runtime_error("Required instance extensions are missing.");
@@ -318,19 +302,14 @@ void VKBase::createAllocator()
 	allocator_info.device = static_cast<VkDevice>(context->device);
 	allocator_info.instance = static_cast<VkInstance>(context->instance);
 
-	bool can_get_memory_requirements = is_extension_supported(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-	bool has_dedicated_allocation = is_extension_supported(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-
-	// if (can_get_memory_requirements && has_dedicated_allocation)
-	// {
-	// 	allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-	// 	vma_vulkan_func.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-	// 	vma_vulkan_func.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
-	// }
-
 	allocator_info.pVulkanFunctions = &vma_vulkan_func;
 
 	auto result = vmaCreateAllocator(&allocator_info, &context->memory_allocator);
+	if (result != VK_SUCCESS)
+	{
+		SDL_LogError(SDL_LOG_CATEGORY_RENDER, "Can't create VMA Allocator");
+		return;
+	}
 }
 
 void VKBase::createCommandPool()
@@ -341,7 +320,7 @@ void VKBase::createCommandPool()
 
 void VKBase::createDescriptorPool()
 {
-	const std::array<vk::DescriptorPoolSize, 2> pool_sizes = {{{vk::DescriptorType::eUniformBuffer, 1}, {vk::DescriptorType::eCombinedImageSampler, 1}}};
+	const std::array<vk::DescriptorPoolSize, 2> pool_sizes = {{{vk::DescriptorType::eUniformBuffer, 1000}, {vk::DescriptorType::eCombinedImageSampler, 1000}}};
 
 	const vk::DescriptorPoolCreateInfo descriptor_pool_create_info({}, 2, pool_sizes);
 
@@ -351,7 +330,7 @@ void VKBase::createDescriptorPool()
 void VKBase::createDescriptorSetLayoutBinding()
 {
 	const std::array<vk::DescriptorSetLayoutBinding, 2> set_layout_bindings = {
-		{{0, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex},
+		{{0, vk::DescriptorType::eUniformBufferDynamic, 1, vk::ShaderStageFlagBits::eVertex},
 		 {1, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment}}};
 
 	vk::DescriptorSetLayoutCreateInfo descriptor_layout({}, set_layout_bindings);
@@ -372,7 +351,7 @@ void VKBase::initVulkan()
 	this->createInstance();
 	this->selectPhysicalDevice();
 
-	int width, height;
+	int32_t width, height;
 	SDL_Vulkan_GetDrawableSize(window.handle, &width, &height);
 	context->swapchain_dimensions.width = width;
 	context->swapchain_dimensions.height = height;
@@ -450,4 +429,4 @@ void VKBase::shutdownVulkan()
 	delete context;
 }
 
-VKBase::VKBase(const Vent_Window &window) : window(window) {}
+VKBase::VKBase(const Vent_Window &pwindow) : window(pwindow) {}

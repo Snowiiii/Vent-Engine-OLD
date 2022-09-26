@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 project(vent VERSION 1.0.0)
 
 # Sets C++ standard to c++20
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 # Sets C++ standard rquired to true
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -16,6 +16,9 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/SDL2)
 add_subdirectory(deps/stb)
+add_subdirectory(deps/fast_obj)
+add_subdirectory(deps/meshoptimizer)
+
 
 if(Vulkan_FOUND)
     add_subdirectory(deps/volk)
@@ -46,6 +49,12 @@ endif ()
 
 # stb
 target_link_libraries(vent PUBLIC stb)
+
+# fast_obj
+target_link_libraries(vent PUBLIC fast_obj_lib)
+
+# meshoptimizer
+target_link_libraries(vent PUBLIC meshoptimizer)
 
 if (Vulkan_FOUND)
     add_library(vulkan INTERFACE)
@@ -126,7 +135,14 @@ set(TEXTURES_SOURCE_DIR ${ASSETS_SOURCE_DIR}/textures)
 set(TEXTURES_SOURCE_DIR_OUT ${ASSETS_SOURCE_DIR_OUTPUT}/textures)
 
 message("Copying Textures")
-# file(COPY ${TEXTURES_SOURCE_DIR} DESTINATION ${TEXTURES_SOURCE_DIR_OUT})
+add_custom_command(
+    COMMAND
+      ${CMAKE_COMMAND} -E make_directory ${TEXTURES_SOURCE_DIR}
+    OUTPUT ${TEXTURES_SOURCE_DIR}
+    COMMENT "Creating ${TEXTURES_SOURCE_DIR}"
+  )
+
+file(COPY ${TEXTURES_SOURCE_DIR} DESTINATION ${TEXTURES_SOURCE_DIR_OUT})
 
 # Vulkan
 if (Vulkan_FOUND)

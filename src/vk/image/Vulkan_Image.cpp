@@ -1,12 +1,13 @@
 #include "Vulkan_Image.hpp"
+#include "../uniform/Vulkan_3D_Unifrom.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-Vulkan_Image::Vulkan_Image(const vk::DescriptorBufferInfo &buffer_descriptor, const std::string &path)
+VulkanImage::VulkanImage(const vk::DescriptorBufferInfo &buffer_descriptor, const std::string &path)
 {
 
-    int width, height, channels;
+    int32_t width, height, channels;
     u_char *data = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     if (!data)
     {
@@ -24,15 +25,15 @@ Vulkan_Image::Vulkan_Image(const vk::DescriptorBufferInfo &buffer_descriptor, co
     this->createDescriptorSet(buffer_descriptor);
 }
 
-Vulkan_Image::~Vulkan_Image()
+VulkanImage::~VulkanImage()
 {
+    context->device.waitIdle();
     context->device.destroyImageView(texture.view);
-    context->device.destroyImage(texture.image);
+    vmaDestroyImage(context->memory_allocator, (VkImage)texture.image, texture.allocation);
     context->device.destroySampler(texture.sampler);
-    context->device.freeMemory(texture.device_memory);
 }
 
-void Vulkan_Image::createImage()
+void VulkanImage::createImage()
 {
     vk::SamplerCreateInfo sampler;
     sampler.magFilter = vk::Filter::eLinear;
@@ -78,27 +79,16 @@ void Vulkan_Image::createImage()
     texture.view = context->device.createImageView(view);
 }
 
-void Vulkan_Image::upload(u_char *pdata, uint32_t width, uint32_t height)
+void VulkanImage::upload(u_char *pdata, uint32_t width, uint32_t height)
 {
-    const int size = width * height * 4;
+    const auto size = width * height * 4;
 
-    vk::BufferCreateInfo buffer_create_info({}, size, vk::BufferUsageFlagBits::eTransferSrc, vk::SharingMode::eExclusive, {});
-    vk::Buffer staging_buffer = context->device.createBuffer(buffer_create_info);
+    auto staging_buffer = std::make_unique<VulkanVertexBuffer>(context->device, size, vk::BufferUsageFlagBits::eTransferSrc, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-    // Get memory requirements for the staging buffer (alignment, memory type bits)
-    vk::MemoryRequirements memory_requirements = context->device.getBufferMemoryRequirements(staging_buffer);
-    vk::MemoryAllocateInfo memory_allocate_info(
-        memory_requirements.size,
-        // Get memory type index for a host visible buffer
-        Vulkan_Model::get_memory_type(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent));
-    vk::DeviceMemory staging_memory = context->device.allocateMemory(memory_allocate_info);
-    context->device.bindBufferMemory(staging_buffer, staging_memory, 0);
-
-    // Copy texture data into host local staging buffer
-
-    uint8_t *data = reinterpret_cast<uint8_t *>(context->device.mapMemory(staging_memory, 0, memory_requirements.size));
+    uint8_t *data;
+    vmaMapMemory(context->memory_allocator, staging_buffer->get_allocation(), (void **)&data);
     memcpy(data, pdata, size);
-    context->device.unmapMemory(staging_memory);
+    vmaUnmapMemory(context->memory_allocator, staging_buffer->get_allocation());
 
     // Setup buffer copy regions for each mip level
     std::vector<vk::BufferImageCopy> buffer_copy_regions(texture.mip_levels);
@@ -111,7 +101,6 @@ void Vulkan_Image::upload(u_char *pdata, uint32_t width, uint32_t height)
         buffer_copy_regions[i].imageExtent.width = width >> i;
         buffer_copy_regions[i].imageExtent.height = height >> i;
         buffer_copy_regions[i].imageExtent.depth = 1;
-        // buffer_copy_regions[i].bufferOffset = offset;
     }
 
     // Create optimal tiled target image on the device
@@ -127,13 +116,10 @@ void Vulkan_Image::upload(u_char *pdata, uint32_t width, uint32_t height)
     image_create_info.initialLayout = vk::ImageLayout::eUndefined;
     image_create_info.extent = vk::Extent3D(texture.extent, 1);
     image_create_info.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-    texture.image = context->device.createImage(image_create_info);
 
-    memory_requirements = context->device.getImageMemoryRequirements(texture.image);
-    memory_allocate_info = {memory_requirements.size,
-                            Vulkan_Model::get_memory_type(memory_requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal)};
-    texture.device_memory = context->device.allocateMemory(memory_allocate_info);
-    context->device.bindImageMemory(texture.image, texture.device_memory, 0);
+    VmaAllocationCreateInfo allocation_create_info = {};
+    allocation_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    vmaCreateImage(context->memory_allocator, reinterpret_cast<const VkImageCreateInfo *>(&image_create_info), &allocation_create_info, reinterpret_cast<VkImage *>(&texture.image), &texture.allocation, nullptr);
 
     const vk::CommandBuffer copy_command = context->device.allocateCommandBuffers({context->command_pool, vk::CommandBufferLevel::ePrimary, 1}).front();
     copy_command.begin(vk::CommandBufferBeginInfo());
@@ -168,7 +154,7 @@ void Vulkan_Image::upload(u_char *pdata, uint32_t width, uint32_t height)
     copy_command.pipelineBarrier(vk::PipelineStageFlagBits::eHost, vk::PipelineStageFlagBits::eTransfer, {}, nullptr, nullptr, image_memory_barrier);
 
     // Copy mip levels from staging buffer
-    copy_command.copyBufferToImage(staging_buffer, texture.image, vk::ImageLayout::eTransferDstOptimal, buffer_copy_regions);
+    copy_command.copyBufferToImage(staging_buffer->get_handle(), texture.image, vk::ImageLayout::eTransferDstOptimal, buffer_copy_regions);
 
     // Once the data has been uploaded we transfer the texture image to the shader read layout, so it can be sampled from
     image_memory_barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -185,13 +171,9 @@ void Vulkan_Image::upload(u_char *pdata, uint32_t width, uint32_t height)
     texture.image_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
     flush_command_buffer(copy_command, context->queue, true);
-
-    // Clean up staging resources
-    context->device.freeMemory(staging_memory);
-    context->device.destroyBuffer(staging_buffer);
 }
 
-void Vulkan_Image::createDescriptorSet(const vk::DescriptorBufferInfo &buffer_descriptor)
+void VulkanImage::createDescriptorSet(const vk::DescriptorBufferInfo &buffer_descriptor)
 {
     const vk::DescriptorSetAllocateInfo alloc_info(context->descriptor_pool, 1, &context->descriptor_set_layout);
 
@@ -204,7 +186,7 @@ void Vulkan_Image::createDescriptorSet(const vk::DescriptorBufferInfo &buffer_de
 
     std::array<vk::WriteDescriptorSet, 2> write_descriptor_sets = {
         {// Binding 0 : Vertex shader uniform buffer
-         {descriptor_set, 0, {}, vk::DescriptorType::eUniformBuffer, {}, buffer_descriptor},
+         {descriptor_set, 0, {}, vk::DescriptorType::eUniformBufferDynamic, {}, buffer_descriptor},
          // Binding 1 : Fragment shader texture sampler
          //	Fragment shader: layout (binding = 1) uniform sampler2D samplerColor;
          {descriptor_set, 1, {}, vk::DescriptorType::eCombinedImageSampler, image_descriptor}}};
@@ -212,12 +194,12 @@ void Vulkan_Image::createDescriptorSet(const vk::DescriptorBufferInfo &buffer_de
     context->device.updateDescriptorSets(write_descriptor_sets, {});
 }
 
-void Vulkan_Image::bind(const vk::CommandBuffer &buffer) const
+void VulkanImage::bind(const vk::CommandBuffer &buffer, const uint32_t index) const
 {
-    buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, context->pipeline_layout, 0, descriptor_set, {});
+    buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, context->pipeline_layout, 0, descriptor_set, index * sizeof(Vulkan_3D_Unifrom::ubo_vs));
 }
 
-void Vulkan_Image::flush_command_buffer(const vk::CommandBuffer &command_buffer, vk::Queue queue, bool free, vk::Semaphore signalSemaphore) const
+void VulkanImage::flush_command_buffer(const vk::CommandBuffer &command_buffer, vk::Queue &queue, bool free, vk::Semaphore signalSemaphore) const
 {
     if (!command_buffer)
     {

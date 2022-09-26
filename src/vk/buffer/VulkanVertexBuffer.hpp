@@ -34,6 +34,8 @@ public:
 					   const std::vector<uint32_t> &queue_family_indices = {});
 	~VulkanVertexBuffer();
 
+	VulkanVertexBuffer(const VulkanVertexBuffer &) = delete;
+
 	VulkanVertexBuffer &operator=(const VulkanVertexBuffer &) = delete;
 
 	VulkanVertexBuffer &operator=(VulkanVertexBuffer &&) = delete;
@@ -64,5 +66,9 @@ public:
 	vk::DeviceSize get_size() const
 	{
 		return static_cast<vk::DeviceSize>(size);
+	}
+
+	VmaAllocation get_allocation() const {
+		return allocation;
 	}
 };

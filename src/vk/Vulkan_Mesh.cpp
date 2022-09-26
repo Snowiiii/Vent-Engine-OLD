@@ -1,13 +1,29 @@
-#include "Vulkan_Model.hpp"
+#include "Vulkan_Mesh.hpp"
 
-Vulkan_Model::Vulkan_Model(std::vector<Vertex> &pvertices, std::vector<uint32_t> &pindices)
+Vulkan_Mesh::Vulkan_Mesh(const std::string_view &path)
 {
-    if (!context->device)
+    OBJMeshFormatLoader loader(path);
+    createBuffers(loader.getVertices(), loader.getIndices());
+}
+
+Vulkan_Mesh::Vulkan_Mesh(std::vector<Vertex> &pvertices, std::vector<uint32_t> &pindices)
+{
+    this->createBuffers(pvertices, pindices);
+}
+
+Vulkan_Mesh::~Vulkan_Mesh()
+{
+    if (image)
     {
-        SDL_LogWarn(SDL_LOG_CATEGORY_RENDER, "Tried to create Model before VK Device is Initialized");
-        return;
+        image.reset();
     }
 
+    vertex_buffer.reset();
+    index_buffer.reset();
+}
+
+void Vulkan_Mesh::createBuffers(std::vector<Vertex> &pvertices, std::vector<uint32_t> &pindices)
+{
     // vertex
 
     vertexCount = static_cast<uint32_t>(pvertices.size() * sizeof(Vertex));
@@ -25,13 +41,7 @@ Vulkan_Model::Vulkan_Model(std::vector<Vertex> &pvertices, std::vector<uint32_t>
     index_buffer->update(pindices.data(), index_buffer_size);
 }
 
-Vulkan_Model::~Vulkan_Model()
-{
-    vertex_buffer.reset();
-    index_buffer.reset();
-}
-
-uint32_t Vulkan_Model::get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32 *memory_type_found)
+uint32_t Vulkan_Mesh::get_memory_type(uint32_t bits, vk::MemoryPropertyFlags properties, vk::Bool32 *memory_type_found)
 {
     const vk::PhysicalDeviceMemoryProperties memory_properties = context->gpu.getMemoryProperties();
 
@@ -62,14 +72,24 @@ uint32_t Vulkan_Model::get_memory_type(uint32_t bits, vk::MemoryPropertyFlags pr
     }
 }
 
-void Vulkan_Model::bind(const vk::CommandBuffer &commandBuffer) const
+void Vulkan_Mesh::bind(const vk::CommandBuffer &commandBuffer, const uint32_t index) const
 {
+    if (image)
+    {
+        image->bind(commandBuffer, index);
+    }
+
     vk::DeviceSize offset = 0;
     commandBuffer.bindVertexBuffers(0, vertex_buffer->get_handle(), offset);
     commandBuffer.bindIndexBuffer(index_buffer->get_handle(), 0, vk::IndexType::eUint32);
 }
 
-void Vulkan_Model::draw(const vk::CommandBuffer &commandBuffer) const
+void Vulkan_Mesh::setTexture(const vk::DescriptorBufferInfo &buffer_descriptor, const std::string &path)
+{
+    image = std::make_unique<VulkanImage>(buffer_descriptor, path);
+}
+
+void Vulkan_Mesh::draw(const vk::CommandBuffer &commandBuffer) const
 {
     commandBuffer.drawIndexed(index_count, 1, 0, 0, 0);
 }

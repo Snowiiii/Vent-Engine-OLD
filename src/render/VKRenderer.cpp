@@ -11,17 +11,16 @@ Renderer::Renderer()
 	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK RenderPass");
 	vkbase.createRenderPass();
 
+	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading Shader Uniform");
+	this->loadUniform();
+
+	objectRenderer = std::make_unique<ObjectRenderer>();
+
 	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading Models");
 	this->loadModels();
 
 	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Creating VK Pipeline");
-	vkbase.createPipeline("assets/shaders/texture.vert.spv", "assets/shaders/texture.frag.spv");
-
-	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading Shader Uniform");
-	this->loadUniform();
-
-	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Loading Images");
-	this->loadImages();
+	vkbase.createPipeline("assets/shaders/model.vert.spv", "assets/shaders/model.frag.spv");
 
 	SDL_LogDebug(SDL_LOG_CATEGORY_RENDER, "Init FrameBuffers");
 	this->init_framebuffers();
@@ -29,23 +28,15 @@ Renderer::Renderer()
 
 void Renderer::loadModels()
 {
-	std::vector<Vertex> vertices{{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-								 {{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
-								 {{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f, 1.0f}},
-								 {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}};
-	std::vector<uint32_t> indices = {0, 1, 2,
-									 3, 0, 2};
+	vk::DescriptorBufferInfo buffer_descriptor(uniform->getBuffer(), 0, sizeof(Vulkan_3D_Unifrom::ubo_vs));
+	std::unique_ptr<Vulkan_Mesh> model = std::make_unique<Vulkan_Mesh>("assets/meshes/dragon.obj");
+	model->setTexture(buffer_descriptor, "assets/textures/texture.png");
 
-	model = std::make_unique<Vulkan_Model>(vertices, indices);
+	objectRenderer->addModel(model);
 }
 
-void Renderer::loadImages()
+void Renderer::loadUniform()
 {
-	vk::DescriptorBufferInfo buffer_descriptor(uniform->getBuffer(), 0, VK_WHOLE_SIZE);
-	image = std::make_unique<Vulkan_Image>(buffer_descriptor, "assets/textures/texture.png");
-}
-
-void Renderer::loadUniform() {
 	uniform = std::make_unique<Vulkan_3D_Unifrom>(camera);
 }
 
@@ -107,20 +98,14 @@ Renderer::~Renderer()
 
 	this->teardown_framebuffers();
 
-	if (image)
+	if (objectRenderer)
 	{
-		image.reset();
+		objectRenderer.reset();
 	}
 
 	if (uniform)
 	{
 		uniform.reset();
-	}
-	
-
-	if (model)
-	{
-		model.reset();
 	}
 
 	for (auto &per_frame : context->per_frame)
@@ -242,10 +227,8 @@ vk::Result Renderer::acquire_next_image(uint32_t &image)
 
 void Renderer::render(uint32_t &swapchain_index)
 {
-	static float greenChannel = 0.0f;
-	greenChannel += 0.01f;
-	if (greenChannel > 1.0f)
-		greenChannel = 0.0f;
+	// Only update if needed
+	uniform->updateViewMatrix(camera);
 
 	vk::Framebuffer framebuffer = context->swapchain_framebuffers[swapchain_index];
 
@@ -255,14 +238,14 @@ void Renderer::render(uint32_t &swapchain_index)
 
 	cmd.begin(begin_info);
 
-	vk::ClearValue clear_value;
-	clear_value.color = vk::ClearColorValue(std::array<float, 4>({{0.1f, greenChannel, 0.2f, 1.0f}}));
+	vk::ClearValue clear_values[2];
+	clear_values[0].color = vk::ClearColorValue(std::array<float, 4>({{0.1f, 0.0f, 0.2f, 1.0f}}));
+	clear_values[1].depthStencil = vk::ClearDepthStencilValue(0.0f, 0);
 
 	vk::RenderPassBeginInfo rp_begin(context->render_pass, framebuffer, {{0, 0}, {context->swapchain_dimensions.width, context->swapchain_dimensions.height}},
-									 clear_value);
+									 clear_values);
 
 	cmd.beginRenderPass(rp_begin, vk::SubpassContents::eInline);
-	image->bind(cmd);
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, context->pipeline);
 
 	vk::Viewport vp(0.0f, 0.0f, static_cast<float>(context->swapchain_dimensions.width), static_cast<float>(context->swapchain_dimensions.height), 0.0f, 1.0f);
@@ -273,12 +256,13 @@ void Renderer::render(uint32_t &swapchain_index)
 
 	cmd.setScissor(0, scissor);
 
-	model->bind(cmd);
-	model->draw(cmd);
+	objectRenderer->render(cmd, uniform);
 
 	cmd.endRenderPass();
 
 	cmd.end();
+
+	uniform->uniform_buffer_general->flush();
 
 	if (!context->per_frame[swapchain_index].swapchain_release_semaphore)
 	{
@@ -288,10 +272,7 @@ void Renderer::render(uint32_t &swapchain_index)
 	const vk::PipelineStageFlags wait_stage(vk::PipelineStageFlagBits::eColorAttachmentOutput);
 
 	const vk::SubmitInfo info(context->per_frame[swapchain_index].swapchain_acquire_semaphore, wait_stage, cmd,
-						context->per_frame[swapchain_index].swapchain_release_semaphore);
+							  context->per_frame[swapchain_index].swapchain_release_semaphore);
 	// Submit command buffer to graphics queue
 	context->queue.submit(info, context->per_frame[swapchain_index].queue_submit_fence);
-
-	// Only update if needed
-	uniform->updateUniformBuffers(camera);
 }

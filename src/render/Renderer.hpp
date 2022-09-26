@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../vk/Vulkan_Base.hpp"
-#include "../vk/Vulkan_Model.hpp"
-#include "../vk/image/Vulkan_Image.hpp"
+#include "../vk/Vulkan_Mesh.hpp"
+
+#include "ObjectRenderer.hpp"
 
 #include "../vk/uniform/Vulkan_3D_Unifrom.hpp"
 
@@ -23,19 +24,15 @@ private:
 
     std::unique_ptr<Vulkan_3D_Unifrom> uniform;
 
-    std::unique_ptr<Vulkan_Model> model;
+    std::unique_ptr<ObjectRenderer> objectRenderer;
 
-    std::unique_ptr<Vulkan_Image> image;
-
-    bool resize(uint32_t, uint32_t);
+    bool resize(const uint32_t,const uint32_t);
 
     void init_framebuffers();
 
     void teardown_framebuffers();
 
     void loadModels();
-
-    void loadImages();
 
     void loadUniform();
 

@@ -1,28 +1,33 @@
 #include "Camera.hpp"
 
-Camera::Camera()
+GameObject::GameObject()
 {
 }
 
-Camera::~Camera()
+GameObject::~GameObject()
 {
 }
 
 void Camera::handleInput(SDL_Keysym &event)
 {
-    switch (event.scancode)
+    switch (event.sym)
     {
-    case SDL_SCANCODE_W:
-        camera_pos.z += 0.1F;
+    case SDLK_w:
+        pos.z += 0.1F;
         break;
-    case SDL_SCANCODE_S:
-        camera_pos.z -= 0.1F;
+    case SDLK_s:
+        pos.z -= 0.1F;
         break;
-    case SDL_SCANCODE_A:
-        camera_pos.x += 0.1F;
+    case SDLK_a:
+        pos.x += 0.1F;
         break;
-    case SDL_SCANCODE_D:
-        camera_pos.x -= 0.1F;
+    case SDLK_d:
+        pos.x -= 0.1F;
+        break;
+    // Debug
+    case SDLK_q:
+        rotation.x += 1;
+        rotation.z += 1;
         break;
 
     default:

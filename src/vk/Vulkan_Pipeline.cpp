@@ -1,13 +1,13 @@
-#include "Vulkan_Model.hpp"
+#include "Vulkan_Mesh.hpp"
 
 #include <fstream>
 
-vk::ShaderModule VKBase::load_shader_module(const std::string &filename)
+vk::ShaderModule VKBase::load_shader_module(const std::string_view &filename)
 {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	std::ifstream file(filename.data(), std::ios::ate | std::ios::binary);
 	if (!file.is_open())
 	{
-		SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "Failed to open Shader file!, %s", filename.c_str());
+		SDL_LogWarn(SDL_LOG_CATEGORY_SYSTEM, "Failed to open Shader file!, %s", filename.data());
 	}
 	const auto fileSize = file.tellg();
 	file.seekg(0);
@@ -24,7 +24,7 @@ vk::ShaderModule VKBase::load_shader_module(const std::string &filename)
 	return context->device.createShaderModule(createInfo);
 }
 
-void VKBase::createPipeline(const std::string &vertexShaderFilename, const std::string &fragmentShaderFilename)
+void VKBase::createPipeline(const std::string_view &vertexShaderFilename, const std::string_view &fragmentShaderFilename)
 {
 	auto bindingDescriptions = Vertex::getBindingDescription();
 	auto attributeDescriptions = Vertex::getAttributeDescriptions();
