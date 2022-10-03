@@ -1,212 +1,185 @@
-cmake_minimum_required(VERSION 3.13)
-
+cmake_minimum_required(VERSION 3.21)
 project(vent VERSION 1.0.0)
 
-# Sets C++ standard to c++23
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
-# Sets C++ standard rquired to true
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/assets)
-set(ASSETS_SOURCE_DIR_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/assets)
+set(VENT_COMMON_DIR "${CMAKE_SOURCE_DIR}/Common")
+set(VENT_RUNTIME_DIR "${CMAKE_SOURCE_DIR}/Runtime")
+set(VENT_EDITOR_DIR "${CMAKE_SOURCE_DIR}/Editor")
+set(VENT_DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
-# find vulkan
+# Dependencies
 find_package(Vulkan REQUIRED)
 
-add_subdirectory(deps/glm)
-add_subdirectory(deps/SDL2)
-add_subdirectory(deps/stb)
-add_subdirectory(deps/fast_obj)
-add_subdirectory(deps/meshoptimizer)
+if (NOT Vulkan_FOUND)
+    message(ERROR "Could not find Vulkan")
+endif ()
+
+add_subdirectory("${VENT_DEPS_DIR}/volk")
+add_subdirectory("${VENT_DEPS_DIR}/vma")
+add_subdirectory("${VENT_DEPS_DIR}/glm")
+add_subdirectory("${VENT_DEPS_DIR}/SDL2")
+add_subdirectory("${VENT_DEPS_DIR}/stb")
+add_subdirectory("${VENT_DEPS_DIR}/assimp")
+add_subdirectory("${VENT_DEPS_DIR}/meshoptimizer")
+
+# add_subdirectory("${VENT_DEPS_DIR}/imgui")
 
 
-if(Vulkan_FOUND)
-    add_subdirectory(deps/volk)
-    add_subdirectory(deps/vma)
-endif(Vulkan_FOUND)
+add_library(vulkan INTERFACE)
+target_link_libraries(vulkan INTERFACE Vulkan::Vulkan)
 
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
-        ${PROJECT_SOURCE_DIR}/src/*.h
-        ${PROJECT_SOURCE_DIR}/src/*.hpp
-        ${PROJECT_SOURCE_DIR}/src/*.c
-        ${PROJECT_SOURCE_DIR}/src/*.cpp
-        )
-add_executable(vent ${SRC_FILES})
+target_compile_definitions(vulkan INTERFACE VK_NO_PROTOTYPES)
+
+target_link_libraries(VulkanMemoryAllocator INTERFACE vulkan)
+target_link_libraries(volk INTERFACE vulkan)
+
+if (VKB_WSI_SELECTION STREQUAL XCB)
+    target_include_directories(volk PUBLIC ${XCB_INCLUDE_DIRS})
+elseif (VKB_WSI_SELECTION STREQUAL XLIB)
+    target_include_directories(volk PUBLIC ${X11_INCLUDE_DIRS})
+elseif (VKB_WSI_SELECTION STREQUAL WAYLAND)
+    target_include_directories(volk PUBLIC ${WAYLAND_INCLUDE_DIRS})
+endif ()
 
 
-target_link_libraries(vent PUBLIC glm::glm)
 
 target_compile_definitions(glm INTERFACE
         GLM_FORCE_SWIZZLE
         GLM_FORCE_RADIANS
         GLM_FORCE_CTOR_INIT
-        GLM_ENABLE_EXPERIMENTAL
-        )
-if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_definitions(glm INTERFACE GLM_FORCE_CXX14)
-endif ()
+        GLM_ENABLE_EXPERIMENTAL)
 
+# ------------------------------------------
 
-# stb
-target_link_libraries(vent PUBLIC stb)
+list(APPEND VENT_STATIC_LIBS
+        SDL2-static
+        glm::glm
+        stb
+        assimp
+        meshoptimizer
+        vulkan
+        volk
+        VulkanMemoryAllocator)
 
-# fast_obj
-target_link_libraries(vent PUBLIC fast_obj_lib)
+# Runtime
+file(GLOB_RECURSE VENT_RUNTIME_HEADERS "${VENT_RUNTIME_DIR}/src/*.h*")
+file(GLOB_RECURSE VENT_RUNTIME_SOURCES "${VENT_RUNTIME_DIR}/src/*.c*")
 
-# meshoptimizer
-target_link_libraries(vent PUBLIC meshoptimizer)
+add_executable("${CMAKE_PROJECT_NAME}_runtime"
+        ${VENT_RUNTIME_HEADERS}
+        ${VENT_RUNTIME_SOURCES})
 
-if (Vulkan_FOUND)
-    add_library(vulkan INTERFACE)
-    target_link_libraries(vulkan INTERFACE Vulkan::Vulkan)
+# target_precompile_headers("${CMAKE_PROJECT_NAME}_runtime" PRIVATE <vulkan/vulkan.hpp>)
+target_link_libraries("${CMAKE_PROJECT_NAME}_runtime" ${VENT_STATIC_LIBS})
 
-    target_compile_definitions(vulkan INTERFACE VK_NO_PROTOTYPES)
-    target_compile_definitions(vulkan INTERFACE VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
+# Runtime as static library to link against
+add_library("${CMAKE_PROJECT_NAME}_runtime_static"
+        STATIC
+        ${VENT_RUNTIME_HEADERS}
+        ${VENT_RUNTIME_SOURCES})
 
-    if (ANDROID)
-        target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_ANDROID_KHR)
-    elseif (WIN32)
-        target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_WIN32_KHR)
-    elseif (APPLE)
-        target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_METAL_EXT)
-    elseif (UNIX)
-        # Choose WSI based on VKB_WSI_SELECTION
-        if (VKB_WSI_SELECTION STREQUAL XCB OR VKB_WSI_SELECTION STREQUAL XLIB OR VKB_WSI_SELECTION STREQUAL WAYLAND)
-            find_package(PkgConfig REQUIRED)
-        endif ()
-        if (VKB_WSI_SELECTION STREQUAL XCB)
-            pkg_check_modules(XCB xcb REQUIRED)
-            if (XCB_FOUND)
-                target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_XCB_KHR)
-            endif ()
-        elseif (VKB_WSI_SELECTION STREQUAL XLIB)
-            pkg_check_modules(X11 x11 REQUIRED)
-            if (X11_FOUND)
-                target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_XLIB_KHR)
-            endif ()
-        elseif (VKB_WSI_SELECTION STREQUAL WAYLAND)
-            pkg_check_modules(WAYLAND wayland-client REQUIRED)
-            if (WAYLAND_FOUND)
-                target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_WAYLAND_KHR)
-            endif ()
-        elseif (VKB_WSI_SELECTION STREQUAL D2D)
-            set(DIRECT_TO_DISPLAY TRUE)
-            set(DIRECT_TO_DISPLAY TRUE PARENT_SCOPE)
-            target_compile_definitions(vulkan INTERFACE VK_USE_PLATFORM_DISPLAY_KHR)
-        endif ()
-    endif ()
+# target_precompile_headers("${CMAKE_PROJECT_NAME}_runtime_static" PRIVATE <vulkan/vulkan.hpp>)
+target_link_libraries("${CMAKE_PROJECT_NAME}_runtime_static" ${VENT_STATIC_LIBS})
 
-    # vma - 3.0.1
-    add_library(vma INTERFACE)
-    target_link_libraries(vma INTERFACE VulkanMemoryAllocator)
-    target_link_libraries(vma INTERFACE vulkan)
+# Editor
+file(GLOB_RECURSE VENT_EDITOR_HEADERS "${VENT_EDITOR_DIR}/src/*.h*")
+file(GLOB_RECURSE VENT_EDITOR_SOURCES "${VENT_EDITOR_DIR}/src/*.c*")
 
-    target_link_libraries(vent PUBLIC vma)
+set(IMGUI_DIR ${VENT_DEPS_DIR}/imgui)
+set(IMGUI_SOURCE_SPECIAL ${IMGUI_DIR}/backends/imgui_impl_sdl.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp)
+file(GLOB IMGUI_SOURCES_HEADERS "${IMGUI_DIR}/*.h*") 
+file(GLOB IMGUI_SOURCES_SOURCES "${IMGUI_DIR}/*.c*") 
 
-    # We use Volk
-   # target_compile_definitions(vma INTERFACE VMA_STATIC_VULKAN_FUNCTIONS=0)
-   # target_compile_definitions(vma INTERFACE VMA_DYNAMIC_VULKAN_FUNCTIONS=1)
+add_library(ImGui STATIC ${IMGUI_SOURCES_HEADERS} ${IMGUI_SOURCES_SOURCES} ${IMGUI_SOURCE_SPECIAL})
 
-    # volk - 1.3.215
-    target_link_libraries(volk INTERFACE vulkan)
-    target_link_libraries(vent PUBLIC volk)
+target_include_directories(ImGui PUBLIC ${IMGUI_DIR})
+target_link_libraries(ImGui SDL2-static)
 
+add_executable("${CMAKE_PROJECT_NAME}_editor"
+        ${VENT_EDITOR_HEADERS}
+        ${VENT_EDITOR_SOURCES})
 
-    if (VKB_WSI_SELECTION STREQUAL XCB)
-        target_include_directories(volk PUBLIC ${XCB_INCLUDE_DIRS})
-    elseif (VKB_WSI_SELECTION STREQUAL XLIB)
-        target_include_directories(volk PUBLIC ${X11_INCLUDE_DIRS})
-    elseif (VKB_WSI_SELECTION STREQUAL WAYLAND)
-        target_include_directories(volk PUBLIC ${WAYLAND_INCLUDE_DIRS})
-    endif ()
+target_include_directories("${CMAKE_PROJECT_NAME}_editor" PUBLIC ${VENT_RUNTIME_DIR}/src/)
+target_link_libraries("${CMAKE_PROJECT_NAME}_editor" PUBLIC "${CMAKE_PROJECT_NAME}_runtime_static")
 
-endif (Vulkan_FOUND)
+target_include_directories("${CMAKE_PROJECT_NAME}_editor" PUBLIC ${IMGUI_DIR})
+target_link_libraries("${CMAKE_PROJECT_NAME}_editor" PUBLIC ImGui)
 
-option(SDL_TESTS OFF)
-option(SDL_INSTALL_TESTS OFF)
+# Shaders
+set(VENT_RUNTIME_ASSET_DIR "${VENT_RUNTIME_DIR}/assets")
+set(VENT_RUNTIME_TEXTURE_DIR "${VENT_RUNTIME_ASSET_DIR}/textures")
+set(VENT_RUNTIME_SHADER_DIR "${VENT_RUNTIME_ASSET_DIR}/shaders")
+set(VENT_RUNTIME_MESH_DIR "${VENT_RUNTIME_ASSET_DIR}/meshes")
 
-# SDL2 - 2.24.0
-target_link_libraries(vent PUBLIC SDL2-static)
+set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/assets/shaders)
+set(SHADER_SOURCE_DIR ${VENT_RUNTIME_SHADER_DIR})
 
-target_precompile_headers(vent PRIVATE <vulkan/vulkan.hpp>)
+file(GLOB SHADERS
+        ${SHADER_SOURCE_DIR}/*.vert.glsl
+        ${SHADER_SOURCE_DIR}/*.frag.glsl
+        ${SHADER_SOURCE_DIR}/*.comp.glsl
+        ${SHADER_SOURCE_DIR}/*.geom.glsl
+        ${SHADER_SOURCE_DIR}/*.tesc.glsl
+        ${SHADER_SOURCE_DIR}/*.tese.glsl
+        ${SHADER_SOURCE_DIR}/*.mesh.glsl
+        ${SHADER_SOURCE_DIR}/*.task.glsl
+        ${SHADER_SOURCE_DIR}/*.rgen.glsl
+        ${SHADER_SOURCE_DIR}/*.rchit.glsl
+        ${SHADER_SOURCE_DIR}/*.rmiss)
 
-# copy textures
-set(TEXTURES_SOURCE_DIR ${ASSETS_SOURCE_DIR}/textures)
-set(TEXTURES_SOURCE_DIR_OUT ${ASSETS_SOURCE_DIR_OUTPUT}/textures)
+message(DEBUG "Compiling shaders...")
 
-message("Copying Textures")
 add_custom_command(
-    COMMAND
-      ${CMAKE_COMMAND} -E make_directory ${TEXTURES_SOURCE_DIR}
-    OUTPUT ${TEXTURES_SOURCE_DIR}
-    COMMENT "Creating ${TEXTURES_SOURCE_DIR}"
-  )
+COMMAND
+  ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
+OUTPUT ${SHADER_BINARY_DIR}
+COMMENT "Creating ${SHADER_BINARY_DIR}"
+)
 
-file(COPY ${TEXTURES_SOURCE_DIR} DESTINATION ${TEXTURES_SOURCE_DIR_OUT})
-
-# Vulkan
-if (Vulkan_FOUND)
-    set(SHADER_BINARY_DIR ${ASSETS_SOURCE_DIR_OUTPUT}/shaders)
-    set(SHADER_SOURCE_DIR ${ASSETS_SOURCE_DIR}/shaders)
-
-    file(GLOB SHADERS
-            ${SHADER_SOURCE_DIR}/*.vert
-            ${SHADER_SOURCE_DIR}/*.frag
-            ${SHADER_SOURCE_DIR}/*.comp
-            ${SHADER_SOURCE_DIR}/*.geom
-            ${SHADER_SOURCE_DIR}/*.tesc
-            ${SHADER_SOURCE_DIR}/*.tese
-            ${SHADER_SOURCE_DIR}/*.mesh
-            ${SHADER_SOURCE_DIR}/*.task
-            ${SHADER_SOURCE_DIR}/*.rgen
-            ${SHADER_SOURCE_DIR}/*.rchit
-            ${SHADER_SOURCE_DIR}/*.rmiss)
-
-    message(DEBUG "Compiling shaders...")
-
+foreach (source ${SHADERS})
+    get_filename_component(FILENAME ${source} NAME)
     add_custom_command(
-    COMMAND
-      ${CMAKE_COMMAND} -E make_directory ${SHADER_BINARY_DIR}
-    OUTPUT ${SHADER_BINARY_DIR}
-    COMMENT "Creating ${SHADER_BINARY_DIR}"
-  )
+            OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
+            COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${source} -o ${SHADER_BINARY_DIR}/${FILENAME}.spv
+            DEPENDS ${source} ${SHADER_BINARY_DIR}
+            COMMENT "[SHADERS] Compiling ${FILENAME}"
+    )
+    list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
+endforeach ()
 
-  
-    foreach (source ${SHADERS})
-        get_filename_component(FILENAME ${source} NAME)
-        add_custom_command(
-                OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
-                COMMAND ${Vulkan_GLSLANG_VALIDATOR_EXECUTABLE} -V ${source} -o ${SHADER_BINARY_DIR}/${FILENAME}.spv
-                DEPENDS ${source} ${SHADER_BINARY_DIR}
-                COMMENT "[SHADERS] Compiling ${FILENAME}"
-        )
-        list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
-    endforeach ()
+add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
+add_dependencies("${CMAKE_PROJECT_NAME}_runtime" shaders)
+add_dependencies("${CMAKE_PROJECT_NAME}_runtime_static" shaders)
 
-    add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
-endif (Vulkan_FOUND)
+# Textures
+# set(TEXTURES_SOURCE_DIR ${ASSETS_SOURCE_DIR}/textures)
+# set(TEXTURES_SOURCE_DIR_OUT ${ASSETS_SOURCE_DIR_OUTPUT}/textures)
 
-
-# Testing
-
-enable_testing()
-
-add_test(NAME Runs COMMAND vent)
-
-# CPack
-
-include(InstallRequiredSystemLibraries)
-set (CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CMake_VERSION}")
-set (CPACK_SOURCE_PACKAGE_FILE_NAME ${CPACK_PACKAGE_FILE_NAME})
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-set (CPACK_PACKAGE_ICON "${ASSETS_SOURCE_DIR}textures/icons/icon_128.png")
-set(CPACK_PACKAGE_VERSION_MAJOR "${Vent_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${Vent_VERSION_MINOR}")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-include(CPack)
-
-set (CPACK_SOURCE_IGNORE_FILES
- "/CVS/" "/\\\\.build/" "/\\\\.svn/" "\\\\.swp$" "\\\\.#" "/#" "~$")
+# message("Copying Textures")
+# add_custom_command(
+#     COMMAND
+#       ${CMAKE_COMMAND} -E make_directory ${TEXTURES_SOURCE_DIR}
+#     OUTPUT ${TEXTURES_SOURCE_DIR}
+#     COMMENT "Creating ${TEXTURES_SOURCE_DIR}"
+#   )
+# 
+# file(COPY ${TEXTURES_SOURCE_DIR} DESTINATION ${TEXTURES_SOURCE_DIR_OUT})
 
 
+file(GLOB_RECURSE VENT_RUNTIME_SHADERS "${VENT_RUNTIME_SHADER_DIR}/*.glsl")
+file(GLOB_RECURSE VENT_RUNTIME_TEXTURES "${VENT_RUNTIME_TEXTURE_DIR}/*.png")
+file(GLOB_RECURSE VENT_RUNTIME_MESHES "${VENT_RUNTIME_MESH_DIR}/*.obj")
 
+# test change zip to pak
+# add_custom_target("${CMAKE_PROJECT_NAME}_assets"
+#         COMMAND ${CMAKE_COMMAND} -E tar "cfv" "assets.zip" --format=zip
+#         "${VENT_RUNTIME_SHADERS}"
+#         "${VENT_RUNTIME_TEXTURES}"
+#         "${VENT_RUNTIME_MESHES}"
+#         OUTPUT "assets.zip"
+#         )
+
+# add_dependencies("${CMAKE_PROJECT_NAME}_runtime" "${CMAKE_PROJECT_NAME}_assets")
+# add_dependencies("${CMAKE_PROJECT_NAME}_runtime_static" "${CMAKE_PROJECT_NAME}_assets")
