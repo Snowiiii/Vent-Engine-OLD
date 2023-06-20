@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 project(vent VERSION 1.0.0)
 
 set(CMAKE_C_STANDARD 23)
@@ -10,7 +10,7 @@ set(VENT_EDITOR_DIR "${CMAKE_SOURCE_DIR}/Editor")
 set(VENT_DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 # Dependencies
-find_package(Vulkan REQUIRED)
+find_dependency(Vulkan)
 
 if (NOT Vulkan_FOUND)
     message(ERROR "Could not find Vulkan")
@@ -19,7 +19,7 @@ endif ()
 add_subdirectory("${VENT_DEPS_DIR}/volk")
 add_subdirectory("${VENT_DEPS_DIR}/vma")
 add_subdirectory("${VENT_DEPS_DIR}/glm")
-add_subdirectory("${VENT_DEPS_DIR}/SDL2")
+add_subdirectory("${VENT_DEPS_DIR}/SDL")
 add_subdirectory("${VENT_DEPS_DIR}/stb")
 add_subdirectory("${VENT_DEPS_DIR}/assimp")
 add_subdirectory("${VENT_DEPS_DIR}/meshoptimizer")
