@@ -1,3 +1,3 @@
 # Vent-Engine
 
-Ye my Old Vulkan Engine written in C++, I will write i complety new Engine with Rust & WGPU :D
+Yes, I have an old Vulkan engine written in C++. However, I have decided to develop a completely new engine using Rust and WGPU.
